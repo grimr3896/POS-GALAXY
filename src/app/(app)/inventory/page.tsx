@@ -10,7 +10,7 @@ import { ProductFormSheet } from "./product-form-sheet";
 export default function InventoryPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(true);
   const [editingProduct, setEditingProduct] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
   const { toast } = useToast();
 
