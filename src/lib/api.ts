@@ -192,7 +192,7 @@ export const saveTransaction = (userId: number, items: OrderItem[], paymentMetho
         timestamp: new Date().toISOString(),
         userId,
         items: items.map((item, index) => ({
-            id: index + 1,
+            id: parseInt(`${Date.now()}${index}`), // more unique id
             productId: item.productId,
             productName: item.name,
             quantity: item.quantity,
