@@ -1,21 +1,20 @@
 "use client";
 
 import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
-import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TopProfitMakersChartProps {
@@ -23,7 +22,10 @@ interface TopProfitMakersChartProps {
   isLoading?: boolean;
 }
 
-export function TopProfitMakersChart({ data, isLoading }: TopProfitMakersChartProps) {
+export function TopProfitMakersChart({
+  data,
+  isLoading,
+}: TopProfitMakersChartProps) {
   return (
     <Card>
       <CardHeader>
@@ -34,38 +36,41 @@ export function TopProfitMakersChart({ data, isLoading }: TopProfitMakersChartPr
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <Skeleton className="h-[300px] w-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="name"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `Ksh ${value / 1000}k`}
-              />
-              <Tooltip
-                cursor={{ fill: 'hsl(var(--muted))' }}
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--background))',
-                  borderColor: 'hsl(var(--border))',
-                  borderRadius: 'var(--radius)',
-                }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number) => [new Intl.NumberFormat('en-US', { style: 'currency', currency: 'Ksh' }).format(value), "Profit"]}
-              />
-              <Bar dataKey="total" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead className="text-right">Profit</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data && data.length > 0 ? (
+                data.map((item) => (
+                  <TableRow key={item.name}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell className="text-right">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: "KSH",
+                      }).format(item.total)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-center">
+                    No profit data available.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         )}
       </CardContent>
     </Card>
