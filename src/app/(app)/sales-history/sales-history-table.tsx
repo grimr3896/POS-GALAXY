@@ -49,7 +49,7 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
   }
 
   return (
-    <div className="w-full overflow-auto">
+    <div className="w-full overflow-auto rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -109,7 +109,7 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
                 )) : (
                 <TableRow>
                     <TableCell colSpan={9} className="h-24 text-center">
-                        No transactions found.
+                        No transactions found for the selected filters.
                     </TableCell>
                 </TableRow>
             )}

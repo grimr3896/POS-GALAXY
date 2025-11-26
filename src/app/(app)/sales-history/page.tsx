@@ -5,7 +5,7 @@ import { getTransactions, getUsers } from "@/lib/api";
 import type { Transaction, User } from "@/lib/types";
 import { SalesHistoryTable } from "./sales-history-table";
 import { SalesHistoryFilters, type DateRange } from "./sales-history-filters";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function SalesHistoryPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -62,6 +62,7 @@ export default function SalesHistoryPage() {
        <Card>
         <CardHeader>
             <CardTitle>Sales History</CardTitle>
+            <CardDescription>Browse and filter all past transactions.</CardDescription>
         </CardHeader>
         <CardContent>
             <SalesHistoryFilters
@@ -72,7 +73,7 @@ export default function SalesHistoryPage() {
                 dateRange={dateRange}
                 onDateRangeChange={setDateRange}
                 employees={users}
-                disabled={false}
+                disabled={loading}
             />
             <SalesHistoryTable
                 transactions={filteredTransactions}
