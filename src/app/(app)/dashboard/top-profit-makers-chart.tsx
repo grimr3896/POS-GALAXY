@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TopProfitMakersChartProps {
@@ -42,35 +43,37 @@ export function TopProfitMakersChart({
             <Skeleton className="h-8 w-full" />
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead className="text-right">Profit</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data && data.length > 0 ? (
-                data.map((item) => (
-                  <TableRow key={item.name}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell className="text-right">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: "KSH",
-                      }).format(item.total)}
+          <ScrollArea className="h-[300px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead className="text-right">Profit</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data && data.length > 0 ? (
+                  data.map((item) => (
+                    <TableRow key={item.name}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-right">
+                        {new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency: "KSH",
+                        }).format(item.total)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center">
+                      No profit data available.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={2} className="text-center">
-                    No profit data available.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>
