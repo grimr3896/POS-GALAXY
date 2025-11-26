@@ -73,3 +73,12 @@ export type OrderItem = {
   totalPrice: number;
   type: "bottle" | "drum";
 };
+
+export type Expense = {
+  id: number;
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+  userId: number; // Who recorded it
+};

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Icons } from "@/components/icons";
 import { UserNav } from "@/components/user-nav";
-import { LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark } from "lucide-react";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -23,6 +23,7 @@ const navItems = [
   { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
   { href: "/inventory", label: "Inventory", icon: Archive },
   { href: "/sales-history", label: "Sales History", icon: History },
+  { href: "/expenses", label: "Expenses", icon: Landmark },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/employees", label: "Employees", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },

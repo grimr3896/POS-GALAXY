@@ -1,6 +1,6 @@
 "use client";
 
-import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder } from "./types";
+import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense } from "./types";
 import { PlaceHolderImages } from "./placeholder-images";
 
 // --- Seed Data ---
@@ -15,8 +15,8 @@ const seedProducts: Product[] = [
   { id: 3, sku: "VODK750", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 800, sellPrice: 1500, thresholdQuantity: 5 },
   { id: 4, sku: "COKE500", name: "Coca-Cola", image: PlaceHolderImages.find(p => p.id === 'coke')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 40, sellPrice: 80, thresholdQuantity: 20 },
   { id: 5, sku: "WTR1000", name: "Mineral Water", image: PlaceHolderImages.find(p => p.id === 'water')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 50, sellPrice: 100, thresholdQuantity: 20 },
-  { id: 6, sku: "WHISKEYD", name: "Whiskey", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 20000, sellPrice: 40, thresholdQuantity: 5000 },
-  { id: 7, sku: "VODKAD", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 18000, sellPrice: 35, thresholdQuantity: 5000 },
+  { id: 6, sku: "WHISKEYD", name: "Whiskey", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 20000, sellPrice: 40000, thresholdQuantity: 5000 },
+  { id: 7, sku: "VODKAD", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 18000, sellPrice: 35000, thresholdQuantity: 5000 },
 ];
 
 const seedInventory: InventoryItem[] = [
@@ -28,6 +28,12 @@ const seedInventory: InventoryItem[] = [
   { id: 6, productId: 6, capacityML: 50000, currentML: 24000, lastRestockAt: new Date().toISOString() },
   { id: 7, productId: 7, capacityML: 25000, currentML: 15000, lastRestockAt: new Date().toISOString() },
 ];
+
+const seedExpenses: Expense[] = [
+    { id: 1, date: new Date().toISOString(), description: 'Electricity Bill', amount: 5000, category: 'Utilities', userId: 1 },
+    { id: 2, date: new Date().toISOString(), description: 'Cleaning Supplies', amount: 1200, category: 'Supplies', userId: 1 },
+];
+
 
 // --- LocalStorage Wrapper ---
 const getFromStorage = <T>(key: string, defaultValue: T): T => {
@@ -61,6 +67,7 @@ const initStorage = () => {
     saveToStorage("inventory", seedInventory);
     saveToStorage("transactions", []);
     saveToStorage("suspended_orders", []);
+    saveToStorage("expenses", seedExpenses);
     window.localStorage.setItem("pos_initialized", "true");
   }
 };
@@ -121,7 +128,7 @@ export const saveProduct = (productData: Omit<Product & { inventory?: InventoryI
     const productIndex = products.findIndex(p => p.id === productData.id);
     if (productIndex !== -1) {
       const { inventory: inventoryData, ...updatedProduct } = productData;
-      products[productIndex] = { ...products[productIndex], ...updatedProduct, image: productData.image || defaultImage };
+      products[productIndex] = { ...products[productIndex], ...updatedProduct, image: productData.image || products[productIndex].image || defaultImage };
       
       if (inventoryData) {
         const invIndex = inventory.findIndex(i => i.productId === productData.id);
@@ -135,8 +142,9 @@ export const saveProduct = (productData: Omit<Product & { inventory?: InventoryI
     return products[productIndex];
   } else { // Create new product
     const newId = (products.reduce((maxId, p) => Math.max(p.id, maxId), 0)) + 1;
+    const { inventory: inventoryData, ...newProductData } = productData;
     const newProduct: Product = {
-      ...productData,
+      ...newProductData,
       id: newId,
       image: productData.image || defaultImage
     };
@@ -145,9 +153,9 @@ export const saveProduct = (productData: Omit<Product & { inventory?: InventoryI
     const newInventoryItem: InventoryItem = {
       id: newId,
       productId: newId,
-      quantityUnits: productData.inventory?.quantityUnits || 0,
-      capacityML: productData.inventory?.capacityML || 0,
-      currentML: productData.inventory?.currentML || 0,
+      quantityUnits: inventoryData?.quantityUnits || 0,
+      capacityML: inventoryData?.capacityML || 0,
+      currentML: inventoryData?.currentML || 0,
       lastRestockAt: new Date().toISOString(),
     };
     inventory.push(newInventoryItem);
@@ -232,6 +240,32 @@ export const removeSuspendedOrder = (orderId: string) => {
     const orders = getSuspendedOrders();
     const updatedOrders = orders.filter(o => o.id !== orderId);
     saveToStorage("suspended_orders", updatedOrders);
+};
+
+// Expenses
+export const getExpenses = (): Expense[] => getFromStorage("expenses", seedExpenses);
+export const saveExpense = (expenseData: Omit<Expense, 'id'> & { id?: number }): Expense => {
+    const expenses = getExpenses();
+    if (expenseData.id) { // Update
+        const expenseIndex = expenses.findIndex(e => e.id === expenseData.id);
+        if (expenseIndex > -1) {
+            expenses[expenseIndex] = { ...expenses[expenseIndex], ...expenseData };
+            saveToStorage("expenses", expenses);
+            return expenses[expenseIndex];
+        }
+        throw new Error("Expense not found");
+    } else { // Create
+        const newId = (expenses.reduce((maxId, e) => Math.max(e.id, maxId), 0)) + 1;
+        const newExpense: Expense = { ...expenseData, id: newId };
+        expenses.unshift(newExpense);
+        saveToStorage("expenses", expenses);
+        return newExpense;
+    }
+};
+export const deleteExpense = (expenseId: number): void => {
+    let expenses = getExpenses();
+    expenses = expenses.filter(e => e.id !== expenseId);
+    saveToStorage("expenses", expenses);
 };
 
 
