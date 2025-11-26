@@ -27,7 +27,10 @@ interface SalesHistoryTableProps {
   isLoading?: boolean;
 }
 
-const formatCurrency = (amount: number) => {
+const formatCurrency = (amount: number | undefined | null) => {
+    if (typeof amount !== 'number') {
+        return `Ksh 0.00`;
+    }
     return `Ksh ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -38,6 +41,7 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
   };
 
   const getItemsSummary = (items: Transaction['items']) => {
+    if (!items) return '';
     if (items.length > 2) {
       return `${items[0].productName}, ${items[1].productName} + ${items.length - 2} more`;
     }
@@ -72,7 +76,7 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
                     <TableCell className="font-medium">{t.id}</TableCell>
                     <TableCell>{getUserName(t.userId)}</TableCell>
                     <TableCell>
-                        <span title={t.items.map(i => i.productName).join(', ')}>
+                        <span title={t.items?.map(i => i.productName).join(', ')}>
                             {getItemsSummary(t.items)}
                         </span>
                     </TableCell>
