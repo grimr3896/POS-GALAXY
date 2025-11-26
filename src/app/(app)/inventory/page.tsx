@@ -6,12 +6,15 @@ import { useToast } from "@/hooks/use-toast";
 import type { Product, InventoryItem } from "@/lib/types";
 import { InventoryTable } from "./inventory-table";
 import { ProductFormSheet } from "./product-form-sheet";
+import { PasswordPromptDialog } from "./password-prompt-dialog";
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
+  const [productToEdit, setProductToEdit] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
   const { toast } = useToast();
 
   const fetchData = useCallback(() => {
@@ -30,18 +33,25 @@ export default function InventoryPage() {
     setIsSheetOpen(true);
   };
 
-  const handleEditProduct = (product: Product & { inventory?: InventoryItem }) => {
-    const password = prompt("Please enter the password to edit product details:");
+  const handleEditRequest = (product: Product & { inventory?: InventoryItem }) => {
+    setProductToEdit(product);
+    setIsPasswordDialogOpen(true);
+  };
+
+  const handlePasswordConfirm = (password: string) => {
     if (password === "626-jarvis") {
-      setEditingProduct(product);
+      setEditingProduct(productToEdit);
       setIsSheetOpen(true);
-    } else if (password !== null) {
+      setIsPasswordDialogOpen(false);
+    } else {
       toast({
         variant: "destructive",
         title: "Incorrect Password",
         description: "You do not have permission to edit product details.",
       });
+      setIsPasswordDialogOpen(false);
     }
+    setProductToEdit(null);
   };
 
   const handleDeleteProduct = (productId: number) => {
@@ -87,7 +97,7 @@ export default function InventoryPage() {
         data={products}
         isLoading={loading}
         onAddProduct={handleAddProduct}
-        onEditProduct={handleEditProduct}
+        onEditProduct={handleEditRequest}
         onDeleteProduct={handleDeleteProduct}
       />
       <ProductFormSheet 
@@ -95,6 +105,13 @@ export default function InventoryPage() {
         onOpenChange={setIsSheetOpen}
         onSubmit={handleFormSubmit}
         product={editingProduct}
+      />
+      <PasswordPromptDialog
+        isOpen={isPasswordDialogOpen}
+        onOpenChange={setIsPasswordDialogOpen}
+        onConfirm={handlePasswordConfirm}
+        title="Enter Password to Edit"
+        description="You need administrator permissions to modify product details."
       />
     </div>
   );
