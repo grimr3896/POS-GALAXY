@@ -1,6 +1,6 @@
 "use client";
 
-import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem } from "./types";
+import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder } from "./types";
 import { PlaceHolderImages } from "./placeholder-images";
 
 // --- Seed Data ---
@@ -58,6 +58,7 @@ const initStorage = () => {
     saveToStorage("products", seedProducts);
     saveToStorage("inventory", seedInventory);
     saveToStorage("transactions", []);
+    saveToStorage("suspended_orders", []);
     window.localStorage.setItem("pos_initialized", "true");
   }
 };
@@ -220,14 +221,31 @@ export const saveTransaction = (userId: number, items: OrderItem[], paymentMetho
     return newTransaction;
 }
 
+// Suspended Orders
+export const getSuspendedOrders = (): SuspendedOrder[] => getFromStorage("suspended_orders", []);
+export const saveSuspendedOrder = (order: SuspendedOrder) => {
+    const orders = getSuspendedOrders();
+    orders.push(order);
+    saveToStorage("suspended_orders", orders);
+};
+export const removeSuspendedOrder = (orderId: string) => {
+    const orders = getSuspendedOrders();
+    const updatedOrders = orders.filter(o => o.id !== orderId);
+    saveToStorage("suspended_orders", updatedOrders);
+};
+
+
 // Dashboard
 export const getDashboardData = () => {
     const transactions = getTransactions();
     const products = getProductsWithInventory();
+    const suspendedOrders = getSuspendedOrders();
 
     const today = new Date().toISOString().split('T')[0];
     const todaysTransactions = transactions.filter(t => t.timestamp.startsWith(today));
+    
     const todaysSales = todaysTransactions.reduce((acc, t) => acc + t.totalAmount, 0);
+    const todaysProfit = todaysTransactions.reduce((acc, t) => acc + (t.profit || 0), 0);
 
     const salesByProduct = transactions.flatMap(t => t.items).reduce((acc, item) => {
         acc[item.productId] = (acc[item.productId] || 0) + item.lineTotal;
@@ -256,7 +274,9 @@ export const getDashboardData = () => {
 
     return {
         todaysSales,
+        todaysProfit,
         totalTransactions: todaysTransactions.length,
+        suspendedOrders: suspendedOrders.length,
         topSellers,
         stockAlerts
     };

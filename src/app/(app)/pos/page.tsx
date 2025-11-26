@@ -3,7 +3,7 @@
 import { useState, useReducer, useEffect, useCallback } from "react";
 import { ProductGrid } from "./product-grid";
 import { OrderSummary } from "./order-summary";
-import { getProductsWithInventory, saveTransaction } from "@/lib/api";
+import { getProductsWithInventory, saveTransaction, getSuspendedOrders, saveSuspendedOrder, removeSuspendedOrder } from "@/lib/api";
 import type { Product, InventoryItem, OrderItem, SuspendedOrder } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -16,9 +16,18 @@ export default function POSPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
+  const fetchProducts = useCallback(() => {
     setProducts(getProductsWithInventory());
-  }, [state]);
+  }, []);
+
+  const fetchSuspendedOrders = useCallback(() => {
+    setSuspendedOrders(getSuspendedOrders());
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchSuspendedOrders();
+  }, [fetchProducts, fetchSuspendedOrders, state]);
 
   const handleAddItem = useCallback((item: Omit<OrderItem, "id" | "totalPrice">) => {
     dispatch({ type: "ADD_ITEM", item });
@@ -37,6 +46,7 @@ export default function POSPage() {
     try {
       saveTransaction(user.id, state.orderItems, paymentMethod);
       dispatch({ type: "CLEAR_ORDER" });
+      fetchProducts(); // Refetch to update inventory display
       toast({
         title: "Success",
         description: `Transaction completed with ${paymentMethod}.`,
@@ -50,7 +60,7 @@ export default function POSPage() {
       });
       return false;
     }
-  }, [user, state.orderItems, toast]);
+  }, [user, state.orderItems, toast, fetchProducts]);
 
   const handleSuspendOrder = useCallback(() => {
     if (!user || state.orderItems.length === 0) return;
@@ -60,10 +70,11 @@ export default function POSPage() {
       createdBy: user.id,
       items: state.orderItems,
     };
-    setSuspendedOrders(prev => [newSuspendedOrder, ...prev]);
+    saveSuspendedOrder(newSuspendedOrder);
+    fetchSuspendedOrders();
     dispatch({ type: "CLEAR_ORDER" });
     toast({ title: "Order Suspended" });
-  }, [user, state.orderItems, toast]);
+  }, [user, state.orderItems, toast, fetchSuspendedOrders]);
 
   const handleResumeOrder = useCallback((orderId: string) => {
     const orderToResume = suspendedOrders.find(o => o.id === orderId);
@@ -77,10 +88,11 @@ export default function POSPage() {
             return;
         }
         dispatch({ type: "SET_ORDER", items: orderToResume.items });
-        setSuspendedOrders(prev => prev.filter(o => o.id !== orderId));
+        removeSuspendedOrder(orderId);
+        fetchSuspendedOrders();
         toast({ title: "Order Resumed" });
     }
-  }, [suspendedOrders, state.orderItems.length, toast]);
+  }, [suspendedOrders, state.orderItems.length, toast, fetchSuspendedOrders]);
 
   const handleClearOrder = () => {
     dispatch({ type: "CLEAR_ORDER" });
