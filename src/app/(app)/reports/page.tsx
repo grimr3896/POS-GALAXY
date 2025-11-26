@@ -4,12 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ReportFilters, type ReportFiltersState } from "./report-filters";
-import { getUsers, getTransactions } from "@/lib/api";
-import type { User, Transaction } from "@/lib/types";
+import { getUsers, getTransactions, getProducts } from "@/lib/api";
+import type { User, Transaction, Product } from "@/lib/types";
 import { GeneratedReport } from "./generated-report";
 
 export default function ReportsPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState<Transaction[] | null>(null);
@@ -25,6 +26,7 @@ export default function ReportsPage() {
     setLoading(true);
     setUsers(getUsers());
     setTransactions(getTransactions());
+    setProducts(getProducts());
     setLoading(false);
   }, []);
 
@@ -33,6 +35,16 @@ export default function ReportsPage() {
 
     if (filters.employeeId !== "all") {
       filtered = filtered.filter(t => t.userId === parseInt(filters.employeeId));
+    }
+    
+    if (filters.category !== "all") {
+        const productIdsInCategory = products
+            .filter(p => p.type === filters.category)
+            .map(p => p.id);
+        
+        filtered = filtered.filter(t => 
+            t.items.some(item => productIdsInCategory.includes(item.productId))
+        );
     }
 
     if (filters.dateRange.from) {
@@ -47,7 +59,7 @@ export default function ReportsPage() {
     }
 
     setReportData(filtered);
-  }, [filters, transactions]);
+  }, [filters, transactions, products]);
   
   const createMailtoLink = (report: Transaction[]) => {
     if(!report) return "";
