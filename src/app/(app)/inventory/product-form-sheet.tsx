@@ -23,7 +23,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { Product, InventoryItem } from "@/lib/types";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 
 type ProductWithInventory = Product & { inventory?: InventoryItem };
 
@@ -31,7 +32,7 @@ const formSchema = z.object({
   id: z.number().optional(),
   name: z.string().min(2, "Name must be at least 2 characters."),
   sku: z.string().min(1, "SKU is required."),
-  image: z.string().url("Please enter a valid image URL.").or(z.literal("")).optional(),
+  image: z.string().optional(),
   type: z.enum(["bottle", "drum"]),
   sellPrice: z.coerce.number().positive("Sell price must be positive."),
   thresholdQuantity: z.coerce.number().min(0, "Threshold must be non-negative."),
@@ -52,12 +53,14 @@ interface ProductFormSheetProps {
 }
 
 export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: ProductFormSheetProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
     control,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,7 +74,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
 
   useEffect(() => {
     if (isOpen && product) {
-      reset({
+      const defaultValues = {
         id: product.id,
         name: product.name,
         sku: product.sku,
@@ -84,7 +87,13 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
           currentML: product.inventory?.currentML,
           capacityML: product.inventory?.capacityML,
         }
-      });
+      };
+      reset(defaultValues);
+      if (product.image) {
+        setImagePreview(product.image);
+      } else {
+        setImagePreview(null);
+      }
     } else if (isOpen && !product) {
       reset({
         id: undefined,
@@ -100,8 +109,22 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
           capacityML: 0,
         }
       });
+      setImagePreview(null);
     }
   }, [product, isOpen, reset]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        setValue("image", dataUri);
+        setImagePreview(dataUri);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const formTitle = product ? "Edit Product" : "Add New Product";
   const formDescription = product
@@ -127,10 +150,16 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
               <Input id="sku" {...register("sku")} className="col-span-3" />
               {errors.sku && <p className="col-span-4 text-right text-sm text-destructive">{errors.sku.message}</p>}
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="image" className="text-right">Image URL</Label>
-              <Input id="image" {...register("image")} className="col-span-3" placeholder="https://example.com/image.png" />
-              {errors.image && <p className="col-span-4 text-right text-sm text-destructive">{errors.image.message}</p>}
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="image" className="text-right pt-2">Image</Label>
+              <div className="col-span-3">
+                <Input id="image-upload" type="file" onChange={handleImageChange} accept="image/png, image/jpeg, image/webp" className="mb-2" />
+                {imagePreview && (
+                    <div className="relative w-24 h-24 mt-2">
+                        <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded-md" />
+                    </div>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="type" className="text-right">Type</Label>
@@ -138,7 +167,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                 name="type"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -189,5 +218,3 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
     </Sheet>
   );
 }
-
-    

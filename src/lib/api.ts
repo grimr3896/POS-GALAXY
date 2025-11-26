@@ -115,12 +115,13 @@ export const getProductsWithInventory = () => {
 export const saveProduct = (productData: Omit<Product & { inventory?: InventoryItem }, 'id'> & { id?: number }): Product => {
   const products = getProducts();
   const inventory = getInventory();
+  const defaultImage = "https://picsum.photos/seed/placeholder/400/400";
 
   if (productData.id) { // Update existing product
     const productIndex = products.findIndex(p => p.id === productData.id);
     if (productIndex !== -1) {
       const { inventory: inventoryData, ...updatedProduct } = productData;
-      products[productIndex] = { ...products[productIndex], ...updatedProduct, image: productData.image || 'https://picsum.photos/seed/placeholder/400/400' };
+      products[productIndex] = { ...products[productIndex], ...updatedProduct, image: productData.image || defaultImage };
       
       if (inventoryData) {
         const invIndex = inventory.findIndex(i => i.productId === productData.id);
@@ -137,7 +138,7 @@ export const saveProduct = (productData: Omit<Product & { inventory?: InventoryI
     const newProduct: Product = {
       ...productData,
       id: newId,
-      image: productData.image || 'https://picsum.photos/seed/placeholder/400/400'
+      image: productData.image || defaultImage
     };
     products.push(newProduct);
     
@@ -280,5 +281,3 @@ export const getDashboardData = () => {
         stockAlerts
     };
 }
-
-    

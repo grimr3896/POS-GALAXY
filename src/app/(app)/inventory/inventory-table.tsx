@@ -107,7 +107,6 @@ export function InventoryTable({
                         height="40"
                         src={product.image}
                         width="40"
-                        data-ai-hint="product image"
                       />
                     </TableCell>
                     <TableCell className="font-medium">{product.name}</TableCell>
