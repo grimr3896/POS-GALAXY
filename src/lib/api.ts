@@ -71,6 +71,33 @@ export const findUserByCardId = (cardId: string): User | undefined => {
   const users = getUsers();
   return users.find(u => u.companyCardId === cardId);
 };
+export const saveUser = (userData: Omit<User, 'id'> & { id?: number }): User => {
+    const users = getUsers();
+    if (userData.id) { // Update
+        const userIndex = users.findIndex(u => u.id === userData.id);
+        if (userIndex > -1) {
+            users[userIndex] = { ...users[userIndex], ...userData };
+            saveToStorage("users", users);
+            return users[userIndex];
+        }
+        throw new Error("User not found");
+    } else { // Create
+        const newId = (users.reduce((maxId, u) => Math.max(u.id, maxId), 0)) + 1;
+        const newUser: User = { ...userData, id: newId };
+        users.push(newUser);
+        saveToStorage("users", users);
+        return newUser;
+    }
+};
+export const deleteUser = (userId: number): void => {
+    let users = getUsers();
+    if (users.length <= 1) {
+      throw new Error("Cannot delete the last user.");
+    }
+    users = users.filter(u => u.id !== userId);
+    saveToStorage("users", users);
+};
+
 
 // Products & Inventory
 export const getProducts = (): Product[] => getFromStorage("products", seedProducts);
