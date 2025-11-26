@@ -69,7 +69,7 @@ export function InventoryTable({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Products</CardTitle>
-          {canEdit && <Button onClick={onAddProduct}>Add Product</Button>}
+          <Button onClick={onAddProduct}>Add Product</Button>
         </div>
       </CardHeader>
       <CardContent>
