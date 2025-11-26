@@ -61,6 +61,9 @@ export default function SettingsPage() {
           { name: 'Admin', canAccessPOS: true, canAccessInventory: true, canAccessSalesHistory: true, canAccessEmployees: true, canAccessSettings: true },
           { name: 'Manager', canAccessPOS: true, canAccessInventory: true, canAccessSalesHistory: true, canAccessEmployees: false, canAccessSettings: false },
           { name: 'Cashier', canAccessPOS: true, canAccessInventory: false, canAccessSalesHistory: false, canAccessEmployees: false, canAccessSettings: false },
+          { name: 'Waiter', canAccessPOS: true, canAccessInventory: false, canAccessSalesHistory: false, canAccessEmployees: false, canAccessSettings: false },
+          { name: 'Cleaner', canAccessPOS: false, canAccessInventory: false, canAccessSalesHistory: false, canAccessEmployees: false, canAccessSettings: false },
+          { name: 'Security', canAccessPOS: false, canAccessInventory: false, canAccessSalesHistory: false, canAccessEmployees: false, canAccessSettings: false },
       ]
     },
   });

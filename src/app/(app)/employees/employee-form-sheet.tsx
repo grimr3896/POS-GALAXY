@@ -28,7 +28,7 @@ import { useEffect } from "react";
 const formSchema = z.object({
   id: z.number().optional(),
   name: z.string().min(2, "Name must be at least 2 characters."),
-  role: z.enum(["Admin", "Cashier", "Manager"]),
+  role: z.enum(["Admin", "Cashier", "Manager", "Waiter", "Cleaner", "Security"]),
   companyCardId: z.string().min(4, "Card ID must be at least 4 characters."),
 });
 
@@ -106,6 +106,9 @@ export function EmployeeFormSheet({ isOpen, onOpenChange, onSubmit, employee }: 
                       <SelectItem value="Admin">Admin</SelectItem>
                       <SelectItem value="Manager">Manager</SelectItem>
                       <SelectItem value="Cashier">Cashier</SelectItem>
+                      <SelectItem value="Waiter">Waiter</SelectItem>
+                      <SelectItem value="Cleaner">Cleaner</SelectItem>
+                      <SelectItem value="Security">Security</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

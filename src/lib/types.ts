@@ -1,7 +1,7 @@
 export type User = {
   id: number;
   name: string;
-  role: "Admin" | "Cashier" | "Manager";
+  role: "Admin" | "Cashier" | "Manager" | "Waiter" | "Cleaner" | "Security";
   companyCardId: string;
 };
 
