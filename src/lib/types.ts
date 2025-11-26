@@ -12,11 +12,13 @@ export type Product = {
   sku: string;
   name: string;
   image: string;
-  type: "bottle" | "drum";
+  type: "bottle" | "drum" | "pour"; // Added "pour" type for variants
   unit: "ml" | "L" | "bottle";
   buyPrice: number;
-  sellPrice: number; // For bottles, this is per bottle. For drums, this is per liter.
+  sellPrice: number;
   thresholdQuantity: number;
+  parentProductId?: number; // Link pour variants to parent drum
+  pourSizeML?: number; // Size of the pour in ml
 };
 
 export type InventoryItem = {
@@ -34,9 +36,9 @@ export type TransactionItem = {
   id: number;
   productId: number;
   productName: string;
-  quantity: number; // number of bottles or ml
-  unitPrice: number; // sell price per unit (bottle or ml)
-  buyPrice: number; // buy price per unit (bottle or ml)
+  quantity: number; // number of bottles or pour units
+  unitPrice: number; // sell price per unit (bottle or pour variant)
+  buyPrice: number; // buy price per unit (bottle or pour variant)
   lineTotal: number;
   lineCost: number;
 };
@@ -71,7 +73,7 @@ export type OrderItem = {
   unitPrice: number;
   buyPrice: number;
   totalPrice: number;
-  type: "bottle" | "drum";
+  type: "bottle" | "pour"; // Order items are either bottles or specific pours
 };
 
 export type Expense = {

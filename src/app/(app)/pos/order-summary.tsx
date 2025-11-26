@@ -58,11 +58,14 @@ export function OrderSummary({
         id: `TXN-${Date.now()}`,
         timestamp: new Date().toISOString(),
         userId: 0, // Should get from auth user
-        items: items.map((item, idx) => ({ ...item, id: idx, productName: item.name, lineTotal: item.totalPrice, unitPrice: item.unitPrice})),
+        items: items.map((item, idx) => ({ ...item, id: idx, productName: item.name, lineTotal: item.totalPrice, unitPrice: item.unitPrice, lineCost: item.buyPrice * item.quantity})),
         totalAmount: total,
         tax,
         discount: 0,
+        totalCost: items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0),
+        profit: total - items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0),
         paymentMethod,
+        status: "Completed",
       });
       setIsReceiptOpen(true);
     }
@@ -120,17 +123,15 @@ export function OrderSummary({
                   <div className="grid gap-1">
                     <p className="font-medium leading-tight truncate">{item.name}</p>
                     <div className="flex items-center gap-2">
-                       {item.type === 'bottle' ? (
-                          <div className="flex items-center gap-1.5">
-                              <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}>
-                                  <Minus className="h-3 w-3" />
-                              </Button>
-                              <Input value={item.quantity} onChange={e => onUpdateQuantity(item.id, parseInt(e.target.value) || 1)} className="h-6 w-10 text-center px-1" />
-                              <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}>
-                                  <Plus className="h-3 w-3" />
-                              </Button>
-                          </div>
-                        ) : <p className="text-sm text-muted-foreground">{item.quantity}ml</p> }
+                      <div className="flex items-center gap-1.5">
+                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}>
+                              <Minus className="h-3 w-3" />
+                          </Button>
+                          <Input value={item.quantity} onChange={e => onUpdateQuantity(item.id, parseInt(e.target.value) || 1)} className="h-6 w-10 text-center px-1" />
+                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}>
+                              <Plus className="h-3 w-3" />
+                          </Button>
+                      </div>
                     </div>
                   </div>
 

@@ -3,25 +3,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { Product, InventoryItem, OrderItem } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { createOrderItem } from "./pos-helpers";
+import { getPourVariantsForDrum } from "@/lib/api";
 
 interface DrumWidgetProps {
-  product: Product & { inventory?: InventoryItem };
+  drumProduct: Product & { inventory?: InventoryItem };
   onAddItem: (item: Omit<OrderItem, "id" | "totalPrice">) => void;
 }
 
-const pourSizes = [250, 500, 1000]; // in ml
-
-export function DrumWidget({ product, onAddItem }: DrumWidgetProps) {
-  const { inventory } = product;
+export function DrumWidget({ drumProduct, onAddItem }: DrumWidgetProps) {
+  const { inventory } = drumProduct;
   const currentLevel = inventory?.currentML || 0;
   const capacity = inventory?.capacityML || 1;
   const fillPercentage = (currentLevel / capacity) * 100;
+  
+  const pourVariants = getPourVariantsForDrum(drumProduct.id);
 
-  const handlePour = (amountML: number) => {
-    if (currentLevel >= amountML) {
-      const orderItem = createOrderItem(product, amountML, 'drum');
+  const handlePour = (variant: Product) => {
+    if (variant.pourSizeML && currentLevel >= variant.pourSizeML) {
+      const orderItem = createOrderItem(variant, 1, 'pour');
       onAddItem(orderItem);
     }
   };
@@ -29,7 +29,7 @@ export function DrumWidget({ product, onAddItem }: DrumWidgetProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{product.name} Drum</CardTitle>
+        <CardTitle>{drumProduct.name} Drum</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4 md:flex-row">
         <div className="relative h-48 w-32 rounded-lg bg-muted p-2 shadow-inner">
@@ -52,9 +52,19 @@ export function DrumWidget({ product, onAddItem }: DrumWidgetProps) {
         <div className="flex flex-1 flex-col gap-3">
             <p className="text-sm text-muted-foreground">Select a pour size:</p>
             <div className="grid grid-cols-3 gap-3">
-                {pourSizes.map(size => (
-                    <Button key={size} variant="outline" size="lg" disabled={currentLevel < size} onClick={() => handlePour(size)}>
-                        {size < 1000 ? `${size}ml` : `${size/1000}L`}
+                {pourVariants.map(variant => (
+                    <Button 
+                        key={variant.id} 
+                        variant="outline" 
+                        size="lg" 
+                        disabled={!variant.pourSizeML || currentLevel < variant.pourSizeML} 
+                        onClick={() => handlePour(variant)}
+                    >
+                        {variant.pourSizeML && (
+                            variant.pourSizeML < 1000 
+                                ? `${variant.pourSizeML}ml` 
+                                : `${variant.pourSizeML / 1000}L`
+                        )}
                     </Button>
                 ))}
             </div>

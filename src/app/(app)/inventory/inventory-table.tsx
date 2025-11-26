@@ -60,6 +60,9 @@ export function InventoryTable({
     return <Badge variant="outline">N/A</Badge>;
   };
 
+  // Filter out 'pour' type products from the main inventory view
+  const displayableProducts = data.filter(p => p.type !== 'pour');
+
   return (
     <Card>
       <CardHeader>
@@ -98,7 +101,7 @@ export function InventoryTable({
                     <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                   </TableRow>
                 ))
-              : data.map((product) => (
+              : displayableProducts.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell className="hidden sm:table-cell">
                       <Image
@@ -115,7 +118,7 @@ export function InventoryTable({
                       {product.type}
                     </TableCell>
                     <TableCell>{renderStock(product)}</TableCell>
-                    <TableCell>Ksh {product.sellPrice.toLocaleString()}</TableCell>
+                    <TableCell>{product.sellPrice > 0 ? `Ksh ${product.sellPrice.toLocaleString()}`: 'N/A'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

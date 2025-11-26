@@ -33,7 +33,7 @@ export function ProductGrid({ bottleProducts, drumProducts, onAddItem }: Product
     <div className="flex h-full flex-col gap-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {drumProducts.map(product => (
-          <DrumWidget key={product.id} product={product} onAddItem={onAddItem} />
+          <DrumWidget key={product.id} drumProduct={product} onAddItem={onAddItem} />
         ))}
       </div>
 
@@ -86,5 +86,3 @@ export function ProductGrid({ bottleProducts, drumProducts, onAddItem }: Product
     </div>
   );
 }
-
-    

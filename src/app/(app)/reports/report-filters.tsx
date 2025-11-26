@@ -105,7 +105,7 @@ export function ReportFilters({
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
             <SelectItem value="bottle">Bottled Products</SelectItem>
-            <SelectItem value="drum">Drum Products</SelectItem>
+            <SelectItem value="pour">Poured Products</SelectItem>
           </SelectContent>
         </Select>
       </div>

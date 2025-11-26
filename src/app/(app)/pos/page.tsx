@@ -3,7 +3,7 @@
 import { useState, useReducer, useEffect, useCallback } from "react";
 import { ProductGrid } from "./product-grid";
 import { OrderSummary } from "./order-summary";
-import { getProductsWithInventory, saveTransaction, getSuspendedOrders, saveSuspendedOrder, removeSuspendedOrder } from "@/lib/api";
+import { getProductsWithInventory, saveTransaction, getSuspendedOrders, saveSuspendedOrder, removeSuspendedOrder, getProducts } from "@/lib/api";
 import type { Product, InventoryItem, OrderItem, SuspendedOrder } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ export default function POSPage() {
   const { toast } = useToast();
 
   const fetchProducts = useCallback(() => {
+    // We only need to fetch products with inventory for display purposes
     setProducts(getProductsWithInventory());
   }, []);
 
@@ -130,5 +131,3 @@ export default function POSPage() {
     </div>
   );
 }
-
-    

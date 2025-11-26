@@ -39,11 +39,17 @@ export default function ReportsPage() {
     
     if (filters.category !== "all") {
         const productIdsInCategory = products
-            .filter(p => p.type === filters.category)
+            .filter(p => p.type === filters.category || (filters.category === 'pour' && p.type === 'drum'))
             .map(p => p.id);
+
+        const pourProductIds = products.filter(p => p.type === 'pour').map(p => p.id);
         
         filtered = filtered.filter(t => 
-            t.items.some(item => productIdsInCategory.includes(item.productId))
+            t.items.some(item => {
+                if (filters.category === 'bottle') return products.find(p => p.id === item.productId)?.type === 'bottle';
+                if (filters.category === 'pour') return pourProductIds.includes(item.productId);
+                return true;
+            })
         );
     }
 
@@ -97,26 +103,26 @@ Galaxy Inn POS System
   
   const getGroupedItemsForCSV = (items: TransactionItem[]) => {
     if (!items || items.length === 0) return '';
+    const allProducts = getProducts();
+    
     const grouped = items.reduce((acc, item) => {
-      const name = item.productName.replace(' (Pour)', '').trim();
-      const isPour = item.productName.includes('(Pour)');
+      const product = allProducts.find(p => p.id === item.productId);
+      const name = item.productName;
       
-      const key = isPour ? `${name} (Pour)` : name;
-
-      if (!acc[key]) {
-        acc[key] = { quantity: 0, isPour };
+      if (!acc[name]) {
+        acc[name] = { quantity: 0, type: product?.type, pourSizeML: product?.pourSizeML };
       }
-      acc[key].quantity += item.quantity;
+      acc[name].quantity += item.quantity;
       
       return acc;
-    }, {} as Record<string, { quantity: number; isPour: boolean }>);
+    }, {} as Record<string, { quantity: number; type?: string; pourSizeML?: number }>);
 
     return Object.entries(grouped)
-      .map(([name, { quantity, isPour }]) => {
-        if (isPour) {
-          return `${name}: ${quantity}ml`;
-        }
-        return `${quantity}x ${name}`;
+      .map(([name, { quantity, type }]) => {
+         if (type === 'bottle') {
+            return `${quantity}x ${name}`;
+         }
+         return `${quantity}x ${name}`;
       })
       .join('; ');
   };

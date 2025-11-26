@@ -1,8 +1,7 @@
 "use client";
 
-import type { OrderItem, Product, InventoryItem } from "@/lib/types";
+import type { OrderItem, Product } from "@/lib/types";
 import { getUUID } from "@/lib/utils";
-
 
 type POSState = {
   orderItems: OrderItem[];
@@ -18,10 +17,13 @@ export type POSAction =
 export function posReducer(state: POSState, action: POSAction): POSState {
   switch (action.type) {
     case "ADD_ITEM": {
+      // For both 'bottle' and 'pour' types, we find if an item with the same productId exists.
       const existingItem = state.orderItems.find(
-        (i) => i.productId === action.item.productId && i.type === action.item.type
+        (i) => i.productId === action.item.productId
       );
-      if (existingItem && action.item.type === "bottle") {
+      
+      if (existingItem) {
+        // If it exists, just increment the quantity.
         const newQuantity = existingItem.quantity + action.item.quantity;
         return {
           ...state,
@@ -30,6 +32,8 @@ export function posReducer(state: POSState, action: POSAction): POSState {
           ),
         };
       }
+      
+      // If it doesn't exist, add it as a new item.
       const newItem: OrderItem = {
         ...action.item,
         id: getUUID(),
@@ -65,29 +69,16 @@ export function posReducer(state: POSState, action: POSAction): POSState {
   }
 }
 
-export function createOrderItem(product: Product & { inventory?: InventoryItem }, quantity: number, type: 'bottle' | 'drum'): Omit<OrderItem, "id" | "totalPrice"> {
-  if (type === 'bottle') {
-    return {
-      productId: product.id,
-      name: product.name,
-      image: product.image,
-      quantity: 1,
-      unitPrice: product.sellPrice,
-      buyPrice: product.buyPrice,
-      type: "bottle",
-    };
-  }
-  
-  // Drum
-  const pricePerML = product.sellPrice / 1000;
-  const costPerML = product.buyPrice / 1000; // Assuming drum buy price is per Liter
+export function createOrderItem(product: Product, quantity: number, type: 'bottle' | 'pour'): Omit<OrderItem, "id" | "totalPrice"> {
+  // The logic is now simpler: the price is just the product's sellPrice,
+  // as pour variants are now their own products with their own prices.
   return {
     productId: product.id,
-    name: `${product.name} (Pour)`,
+    name: product.name,
     image: product.image,
-    quantity: quantity, // quantity is in ML
-    unitPrice: pricePerML, // price is per ML
-    buyPrice: costPerML, // cost is per ML
-    type: "drum",
+    quantity: quantity,
+    unitPrice: product.sellPrice,
+    buyPrice: product.buyPrice,
+    type: type,
   };
 }

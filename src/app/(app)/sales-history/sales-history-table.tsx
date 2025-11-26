@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Transaction, User, TransactionItem } from "@/lib/types";
+import type { Transaction, User, TransactionItem, Product } from "@/lib/types";
 import { format } from "date-fns";
 import {
   DropdownMenu,
@@ -21,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getProducts } from "@/lib/api";
+import { useMemo } from "react";
 
 interface SalesHistoryTableProps {
   transactions: Transaction[];
@@ -36,32 +38,28 @@ const formatCurrency = (amount: number | undefined | null) => {
     return `Ksh ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-const formatItems = (items: TransactionItem[]) => {
+
+export function SalesHistoryTable({ transactions, users, isLoading, onViewTransaction }: SalesHistoryTableProps) {
+    
+  const allProducts = useMemo(() => getProducts(), []);
+
+  const formatItems = (items: TransactionItem[]) => {
     if (!items || items.length === 0) return { full: '', truncated: ''};
     
     const grouped = items.reduce((acc, item) => {
-      const name = item.productName.replace(' (Pour)', '').trim();
-      const key = item.productName.includes('(Pour)') ? `${name} (Pour)` : name;
+      const name = item.productName;
 
-      if (!acc[key]) {
-        acc[key] = { quantity: 0, isPour: item.productName.includes('(Pour)') };
+      if (!acc[name]) {
+        acc[name] = { quantity: 0 };
       }
-      acc[key].quantity += item.quantity;
+      acc[name].quantity += item.quantity;
       
       return acc;
-    }, {} as Record<string, { quantity: number; isPour: boolean }>);
+    }, {} as Record<string, { quantity: number }>);
 
     const formattedItems = Object.entries(grouped)
-      .map(([name, { quantity, isPour }]) => {
-        if (isPour) {
-          if (quantity >= 1000) {
-             const liters = quantity / 1000;
-             const formattedLiters = Number.isInteger(liters) ? liters : liters.toFixed(2);
-            return `${name}: ${formattedLiters}L`;
-          }
-          return `${name}: ${quantity}ml`;
-        }
-        return `${name}: ${quantity} Bottle${quantity > 1 ? 's' : ''}`;
+      .map(([name, { quantity }]) => {
+        return `${quantity}x ${name}`;
       });
 
     const full = formattedItems.join('; ');
@@ -72,9 +70,6 @@ const formatItems = (items: TransactionItem[]) => {
     return { full, truncated };
 };
 
-
-export function SalesHistoryTable({ transactions, users, isLoading, onViewTransaction }: SalesHistoryTableProps) {
-    
   const getUserName = (userId: number) => {
     return users.find(u => u.id === userId)?.name || "Unknown";
   };
