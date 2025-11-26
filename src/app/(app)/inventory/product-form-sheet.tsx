@@ -34,6 +34,7 @@ const formSchema = z.object({
   sku: z.string().min(1, "SKU is required."),
   image: z.string().optional(),
   type: z.enum(["bottle", "drum"]),
+  buyPrice: z.coerce.number().min(0, "Buy price must be non-negative."),
   sellPrice: z.coerce.number().positive("Sell price must be positive."),
   thresholdQuantity: z.coerce.number().min(0, "Threshold must be non-negative."),
   inventory: z.object({
@@ -80,6 +81,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
         sku: product.sku,
         image: product.image,
         type: product.type,
+        buyPrice: product.buyPrice,
         sellPrice: product.sellPrice,
         thresholdQuantity: product.thresholdQuantity,
         inventory: {
@@ -101,6 +103,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
         sku: "",
         image: "",
         type: "bottle",
+        buyPrice: 0,
         sellPrice: 0,
         thresholdQuantity: 0,
         inventory: {
@@ -196,6 +199,11 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                 </div>
               </>
             )}
+             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="buy-price" className="text-right">Buy Price (Ksh)</Label>
+              <Input id="buy-price" type="number" {...register("buyPrice")} className="col-span-3" />
+              {errors.buyPrice && <p className="col-span-4 text-right text-sm text-destructive">{errors.buyPrice.message}</p>}
+            </div>
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="sell-price" className="text-right">Sell Price (Ksh)</Label>
               <Input id="sell-price" type="number" {...register("sellPrice")} className="col-span-3" />
