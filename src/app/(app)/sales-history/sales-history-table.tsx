@@ -26,6 +26,7 @@ interface SalesHistoryTableProps {
   transactions: Transaction[];
   users: User[];
   isLoading?: boolean;
+  onViewTransaction: (transaction: Transaction) => void;
 }
 
 const formatCurrency = (amount: number | undefined | null) => {
@@ -35,37 +36,40 @@ const formatCurrency = (amount: number | undefined | null) => {
     return `Ksh ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-export function SalesHistoryTable({ transactions, users, isLoading }: SalesHistoryTableProps) {
+const formatItems = (items: TransactionItem[]) => {
+    if (!items || items.length === 0) return '';
     
-  const getUserName = (userId: number) => {
-    return users.find(u => u.id === userId)?.name || "Unknown";
-  };
-
-  const getItemsSummary = (items: TransactionItem[]) => {
-    if (!items || items.length === 0) return '—';
-
     const grouped = items.reduce((acc, item) => {
-      const isPour = item.productName.includes('(Pour)');
-      const name = isPour ? item.productName : item.productName;
-      
-      if (!acc[name]) {
-        acc[name] = { quantity: 0, isPour: isPour };
+      const name = item.productName.replace(' (Pour)', '').trim();
+      const key = item.productName.includes('(Pour)') ? `${name} (Pour)` : name;
+
+      if (!acc[key]) {
+        acc[key] = { quantity: 0, isPour: item.productName.includes('(Pour)') };
       }
-      acc[name].quantity += item.quantity;
+      acc[key].quantity += item.quantity;
       
       return acc;
-    }, {} as Record<string, { quantity: number, isPour: boolean }>);
+    }, {} as Record<string, { quantity: number; isPour: boolean }>);
 
     return Object.entries(grouped)
       .map(([name, { quantity, isPour }]) => {
         if (isPour) {
-          return `${name.replace(' (Pour)', '')} (${quantity}ml)`;
+          if (quantity >= 1000) {
+            return `${name}: ${(quantity / 1000).toFixed(2)}L`;
+          }
+          return `${name}: ${quantity}ml`;
         }
-        return `${quantity}x ${name}`;
+        return `${name}: ${quantity} Bottle${quantity > 1 ? 's' : ''}`;
       })
-      .join(', ');
-  };
+      .join('; ');
+};
 
+
+export function SalesHistoryTable({ transactions, users, isLoading, onViewTransaction }: SalesHistoryTableProps) {
+    
+  const getUserName = (userId: number) => {
+    return users.find(u => u.id === userId)?.name || "Unknown";
+  };
 
   return (
     <div className="w-full overflow-auto rounded-md border">
@@ -95,8 +99,8 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
                     <TableCell className="font-medium">{t.id}</TableCell>
                     <TableCell>{getUserName(t.userId)}</TableCell>
                     <TableCell>
-                        <span className="truncate" title={getItemsSummary(t.items)}>
-                            {getItemsSummary(t.items)}
+                        <span className="truncate" title={formatItems(t.items)}>
+                            {formatItems(t.items)}
                         </span>
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(t.totalAmount)}</TableCell>
@@ -106,20 +110,20 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
                     <TableCell>{t.paymentMethod}</TableCell>
                     <TableCell>{format(new Date(t.timestamp), "PPp")}</TableCell>
                     <TableCell>
-                      <Badge variant={t.status === 'Completed' ? 'default' : 'secondary'}>
+                      <Badge variant={t.status === 'Completed' ? 'default' : t.status === 'Reversed' ? 'destructive' : 'secondary'}>
                         {t.status}
                       </Badge>
                     </TableCell>
                      <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <Button aria-haspopup="true" size="icon" variant="ghost" disabled={t.status === 'Reversed'}>
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">Toggle menu</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => onViewTransaction(t)}>
                             <FileText className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>

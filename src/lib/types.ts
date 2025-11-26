@@ -52,7 +52,7 @@ export type Transaction = {
   tax: number;
   discount: number;
   paymentMethod: "Cash" | "Card";
-  status: "Completed" | "Suspended" | "Cancelled";
+  status: "Completed" | "Suspended" | "Cancelled" | "Reversed";
 };
 
 export type SuspendedOrder = {

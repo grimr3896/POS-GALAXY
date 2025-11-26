@@ -1,10 +1,8 @@
 "use client";
 
 import type { OrderItem, Product, InventoryItem } from "@/lib/types";
-import { v4 as uuidv4 } from "uuid";
+import { getUUID } from "@/lib/utils";
 
-// This is a workaround for uuid not being available in some environments
-export const getUUID = () => (typeof window !== "undefined" && window.crypto ? window.crypto.randomUUID() : uuidv4());
 
 type POSState = {
   orderItems: OrderItem[];

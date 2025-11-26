@@ -2,6 +2,7 @@
 
 import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense } from "./types";
 import { PlaceHolderImages } from "./placeholder-images";
+import { getUUID } from "@/lib/utils";
 
 // --- Seed Data ---
 const seedUsers: User[] = [
@@ -119,7 +120,7 @@ export const getProductsWithInventory = () => {
     });
 }
 
-export const saveProduct = (productData: Omit<Product & { inventory?: InventoryItem }, 'id'> & { id?: number }): Product => {
+export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: InventoryItem, id?: number }): Product => {
   const products = getProducts();
   const inventory = getInventory();
   const defaultImage = "https://picsum.photos/seed/placeholder/400/400";
@@ -229,6 +230,71 @@ export const saveTransaction = (userId: number, items: OrderItem[], paymentMetho
     return newTransaction;
 }
 
+export const reverseTransaction = (transactionId: string): OrderItem[] => {
+    const transactions = getTransactions();
+    const inventory = getInventory();
+    const allProducts = getProducts();
+    const transactionIndex = transactions.findIndex(t => t.id === transactionId);
+
+    if (transactionIndex === -1) {
+        throw new Error("Transaction not found.");
+    }
+    
+    const transaction = transactions[transactionIndex];
+    if (transaction.status === "Reversed") {
+        throw new Error("Transaction has already been reversed.");
+    }
+
+    // 1. Restore stock
+    transaction.items.forEach(item => {
+        const invItem = inventory.find(i => i.productId === item.productId);
+        if (invItem) {
+            const product = allProducts.find(p => p.id === item.productId);
+            if (product?.type === 'bottle' && invItem.quantityUnits !== undefined) {
+                invItem.quantityUnits += item.quantity;
+            } else if (product?.type === 'drum' && invItem.currentML !== undefined) {
+                invItem.currentML += item.quantity;
+            }
+        }
+    });
+
+    // 2. Mark original transaction as reversed
+    transactions[transactionIndex].status = 'Reversed';
+
+    saveToStorage("inventory", inventory);
+    saveToStorage("transactions", transactions);
+
+    // 3. Create a new editable order for the POS
+    return transaction.items.map(item => {
+        const product = allProducts.find(p => p.id === item.productId);
+        if (!product) {
+            // This should ideally not happen if data is consistent
+            return {
+                id: getUUID(),
+                productId: item.productId,
+                name: item.productName,
+                image: '',
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                buyPrice: item.buyPrice,
+                totalPrice: item.lineTotal,
+                type: item.productName.includes('(Pour)') ? 'drum' : 'bottle',
+            };
+        }
+        return {
+            id: getUUID(),
+            productId: product.id,
+            name: item.productName,
+            image: product.image,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            buyPrice: item.buyPrice,
+            totalPrice: item.lineTotal,
+            type: product.type
+        };
+    });
+};
+
 // Suspended Orders
 export const getSuspendedOrders = (): SuspendedOrder[] => getFromStorage("suspended_orders", []);
 export const saveSuspendedOrder = (order: SuspendedOrder) => {
@@ -274,10 +340,9 @@ export const getDashboardData = () => {
     const transactions = getTransactions();
     const products = getProductsWithInventory();
     const suspendedOrders = getSuspendedOrders();
-    const allProducts = getProducts();
-
+    
     const today = new Date().toISOString().split('T')[0];
-    const todaysTransactions = transactions.filter(t => t.timestamp.startsWith(today));
+    const todaysTransactions = transactions.filter(t => t.timestamp.startsWith(today) && t.status === 'Completed');
     
     const todaysSales = todaysTransactions.reduce((acc, t) => acc + t.totalAmount, 0);
     const todaysProfit = todaysTransactions.reduce((acc, t) => acc + (t.profit || 0), 0);
@@ -296,13 +361,13 @@ export const getDashboardData = () => {
     const profitByProduct = todaysTransactions.flatMap(t => t.items).reduce((acc, item) => {
         const profit = item.lineTotal - item.lineCost;
         const productName = item.productName.replace(' (Pour)', '').trim();
-        acc[productName] = (acc[productName] || 0) + profit;
+        acc[productName] = (acc[productName] || 0) + (profit || 0);
         return acc;
     }, {} as Record<string, number>);
 
     const topProfitMakers = Object.entries(profitByProduct)
         .sort(([, a], [, b]) => b - a)
-        .map(([name, total]) => ({ name, total }));
+        .map(([name, total]) => ({ name, total: total || 0 }));
 
     const stockAlerts = products.filter(p => {
         if (p.inventory) {

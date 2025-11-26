@@ -1,6 +1,6 @@
 "use client";
 
-import type { User } from "@/lib/types";
+import type { User, OrderItem } from "@/lib/types";
 import { findUserByCardId } from "@/lib/api";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,6 +10,8 @@ interface AuthContextType {
   loading: boolean;
   login: (companyCardId: string) => Promise<boolean>;
   logout: () => void;
+  pendingOrder: OrderItem[] | null;
+  setPendingOrder: (order: OrderItem[] | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingOrder, setPendingOrder] = useState<OrderItem[] | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -63,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   };
 
-  const value = { user, loading, login, logout };
+  const value = { user, loading, login, logout, pendingOrder, setPendingOrder };
 
   return (
     <AuthContext.Provider value={value}>

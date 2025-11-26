@@ -11,9 +11,9 @@ import { posReducer } from "./pos-helpers";
 
 export default function POSPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
+  const { user, pendingOrder, setPendingOrder, loading: authLoading } = useAuth();
   const [state, dispatch] = useReducer(posReducer, { orderItems: [] });
   const [suspendedOrders, setSuspendedOrders] = useState<SuspendedOrder[]>([]);
-  const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchProducts = useCallback(() => {
@@ -27,7 +27,14 @@ export default function POSPage() {
   useEffect(() => {
     fetchProducts();
     fetchSuspendedOrders();
-  }, [fetchProducts, fetchSuspendedOrders, state]);
+  }, [fetchProducts, fetchSuspendedOrders]);
+  
+  useEffect(() => {
+    if (!authLoading && pendingOrder) {
+      dispatch({ type: "SET_ORDER", items: pendingOrder });
+      setPendingOrder(null); // Clear the pending order after loading it
+    }
+  }, [authLoading, pendingOrder, setPendingOrder]);
 
   const handleAddItem = useCallback((item: Omit<OrderItem, "id" | "totalPrice">) => {
     dispatch({ type: "ADD_ITEM", item });

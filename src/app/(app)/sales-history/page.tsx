@@ -1,40 +1,54 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { getTransactions, getUsers } from "@/lib/api";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { getTransactions, getUsers, reverseTransaction, getProducts } from "@/lib/api";
 import type { Transaction, User } from "@/lib/types";
 import { SalesHistoryTable } from "./sales-history-table";
 import { SalesHistoryFilters, type DateRange } from "./sales-history-filters";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { TransactionDetailModal } from "./transaction-detail-modal";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function SalesHistoryPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const { toast } = useToast();
+  const router = useRouter();
+  const { setPendingOrder } = useAuth();
 
   // Filtering state
   const [searchTerm, setSearchTerm] = useState("");
   const [employeeFilter, setEmployeeFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     setLoading(true);
-    // In a real app, you'd fetch this data, but we'll use the mock API
     setTransactions(getTransactions());
     setUsers(getUsers());
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredTransactions = useMemo(() => {
     let filtered = transactions;
 
     // Apply search term filter
     if (searchTerm) {
-      filtered = filtered.filter((t) =>
-        t.items.some((item) =>
-          item.productName.toLowerCase().includes(searchTerm.toLowerCase())
-        ) || t.id.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const lowercasedTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter((t) => {
+        const itemsMatch = t.items.some((item) =>
+          item.productName.toLowerCase().includes(lowercasedTerm)
+        );
+        const idMatch = t.id.toLowerCase().includes(lowercasedTerm);
+        return itemsMatch || idMatch;
+      });
     }
 
     // Apply employee filter
@@ -56,6 +70,43 @@ export default function SalesHistoryPage() {
 
     return filtered;
   }, [transactions, searchTerm, employeeFilter, dateRange]);
+  
+  const handleViewTransaction = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedTransaction(null);
+  };
+  
+  const handleReverseAndEdit = (transaction: Transaction) => {
+    const password = prompt("To reverse this sale, please enter the admin password:");
+    if (password === "626-jarvis") {
+        try {
+            const newOrderItems = reverseTransaction(transaction.id);
+            setPendingOrder(newOrderItems);
+            fetchData();
+            handleCloseModal();
+            toast({
+                title: "Sale Reversed",
+                description: `Sale ${transaction.id} has been reversed. Items loaded into POS for editing.`,
+            });
+            router.push("/pos");
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Reversal Failed",
+                description: error.message || "Could not reverse the transaction.",
+            });
+        }
+    } else if (password !== null) {
+        toast({
+            variant: "destructive",
+            title: "Incorrect Password",
+            description: "You do not have permission to perform this action.",
+        });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,9 +130,18 @@ export default function SalesHistoryPage() {
                 transactions={filteredTransactions}
                 users={users}
                 isLoading={loading}
+                onViewTransaction={handleViewTransaction}
             />
         </CardContent>
        </Card>
+       {selectedTransaction && (
+        <TransactionDetailModal
+          transaction={selectedTransaction}
+          isOpen={!!selectedTransaction}
+          onOpenChange={handleCloseModal}
+          onReverseAndEdit={handleReverseAndEdit}
+        />
+       )}
     </div>
   );
 }
