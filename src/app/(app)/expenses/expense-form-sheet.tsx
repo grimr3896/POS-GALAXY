@@ -12,13 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -39,8 +32,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const expenseCategories = ["Utilities", "Salaries", "Rent", "Supplies", "Marketing", "Maintenance", "Miscellaneous"];
 
 interface ExpenseFormSheetProps {
   isOpen: boolean;
@@ -75,7 +66,7 @@ export function ExpenseFormSheet({ isOpen, onOpenChange, onSubmit, expense }: Ex
         id: undefined,
         description: "",
         amount: 0,
-        category: "Miscellaneous",
+        category: "",
         date: new Date(),
       });
     }
@@ -107,20 +98,8 @@ export function ExpenseFormSheet({ isOpen, onOpenChange, onSubmit, expense }: Ex
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="category" className="text-right">Category</Label>
-              <Controller
-                name="category"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {expenseCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              <Input id="category" {...register("category")} className="col-span-3" />
+               {errors.category && <p className="col-span-4 text-right text-sm text-destructive">{errors.category.message}</p>}
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="date" className="text-right">Date</Label>
