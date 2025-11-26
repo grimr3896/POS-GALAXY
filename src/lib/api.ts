@@ -1,6 +1,6 @@
 "use client";
 
-import type { User, Product, InventoryItem, Transaction, OrderItem } from "./types";
+import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem } from "./types";
 import { PlaceHolderImages } from "./placeholder-images";
 
 // --- Seed Data ---
@@ -149,6 +149,7 @@ export const saveTransaction = (userId: number, items: OrderItem[], paymentMetho
     const inventory = getInventory();
     
     const totalAmount = items.reduce((acc, item) => acc + item.totalPrice, 0);
+    const totalCost = items.reduce((acc, item) => acc + (item.buyPrice * item.quantity), 0);
 
     const newTransaction: Transaction = {
         id: `TXN-${Date.now()}`,
@@ -160,12 +161,17 @@ export const saveTransaction = (userId: number, items: OrderItem[], paymentMetho
             productName: item.name,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
+            buyPrice: item.buyPrice,
             lineTotal: item.totalPrice,
+            lineCost: item.buyPrice * item.quantity,
         })),
         totalAmount,
+        totalCost,
+        profit: totalAmount - totalCost,
         tax: totalAmount * 0.16, // 16% tax
         discount: 0,
-        paymentMethod
+        paymentMethod,
+        status: "Completed",
     };
 
     // Update inventory

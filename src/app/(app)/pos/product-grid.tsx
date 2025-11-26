@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import type { Product, InventoryItem, OrderItem } from "@/lib/types";
 import { DrumWidget } from "./drum-widget";
+import { createOrderItem } from "./pos-helpers";
 
 interface ProductGridProps {
   products: (Product & { inventory?: InventoryItem })[];
@@ -23,14 +24,8 @@ export function ProductGrid({ products, drumProduct, onAddItem }: ProductGridPro
 
   const handleAddBottle = (product: Product & { inventory?: InventoryItem }) => {
     if (product.inventory && product.inventory.quantityUnits && product.inventory.quantityUnits > 0) {
-      onAddItem({
-        productId: product.id,
-        name: product.name,
-        image: product.image,
-        quantity: 1,
-        unitPrice: product.sellPrice,
-        type: "bottle",
-      });
+      const orderItem = createOrderItem(product, 1, 'bottle');
+      onAddItem(orderItem);
     }
   };
 

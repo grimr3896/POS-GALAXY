@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Icons } from "@/components/icons";
 import { UserNav } from "@/components/user-nav";
-import { LayoutDashboard, ShoppingCart, Archive, Users, Settings } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Archive, Users, Settings, History } from "lucide-react";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -22,6 +22,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
   { href: "/inventory", label: "Inventory", icon: Archive },
+  { href: "/sales-history", label: "Sales History", icon: History },
   { href: "/employees", label: "Employees", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

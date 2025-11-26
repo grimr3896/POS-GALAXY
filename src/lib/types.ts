@@ -33,8 +33,10 @@ export type TransactionItem = {
   productId: number;
   productName: string;
   quantity: number; // number of bottles or ml
-  unitPrice: number;
+  unitPrice: number; // sell price per unit (bottle or ml)
+  buyPrice: number; // buy price per unit (bottle or ml)
   lineTotal: number;
+  lineCost: number;
 };
 
 export type Transaction = {
@@ -43,9 +45,12 @@ export type Transaction = {
   userId: number;
   items: TransactionItem[];
   totalAmount: number;
+  totalCost: number;
+  profit: number;
   tax: number;
   discount: number;
   paymentMethod: "Cash" | "Card";
+  status: "Completed" | "Suspended" | "Cancelled";
 };
 
 export type SuspendedOrder = {
@@ -62,6 +67,7 @@ export type OrderItem = {
   image: string;
   quantity: number;
   unitPrice: number;
+  buyPrice: number;
   totalPrice: number;
   type: "bottle" | "drum";
 };

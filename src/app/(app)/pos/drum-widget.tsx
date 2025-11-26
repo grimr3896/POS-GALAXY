@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { Product, InventoryItem, OrderItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { createOrderItem } from "./pos-helpers";
 
 interface DrumWidgetProps {
   product: Product & { inventory?: InventoryItem };
@@ -20,16 +21,8 @@ export function DrumWidget({ product, onAddItem }: DrumWidgetProps) {
 
   const handlePour = (amountML: number) => {
     if (currentLevel >= amountML) {
-      // price is per liter, so convert to per ml
-      const pricePerML = product.sellPrice / 1000;
-      onAddItem({
-        productId: product.id,
-        name: `${product.name} (Pour)`,
-        image: product.image,
-        quantity: amountML,
-        unitPrice: pricePerML,
-        type: "drum",
-      });
+      const orderItem = createOrderItem(product, amountML, 'drum');
+      onAddItem(orderItem);
     }
   };
 

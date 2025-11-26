@@ -7,72 +7,7 @@ import { getProductsWithInventory, saveTransaction } from "@/lib/api";
 import type { Product, InventoryItem, OrderItem, SuspendedOrder } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from "uuid";
-
-// This is a workaround for uuid not being available in some environments
-const getUUID = () => (typeof window !== "undefined" && window.crypto ? window.crypto.randomUUID() : uuidv4());
-
-type POSState = {
-  orderItems: OrderItem[];
-};
-
-type POSAction =
-  | { type: "ADD_ITEM"; item: Omit<OrderItem, "id" | "totalPrice"> }
-  | { type: "REMOVE_ITEM"; itemId: string }
-  | { type: "UPDATE_QUANTITY"; itemId: string; quantity: number }
-  | { type: "CLEAR_ORDER" }
-  | { type: "SET_ORDER"; items: OrderItem[] };
-
-function posReducer(state: POSState, action: POSAction): POSState {
-  switch (action.type) {
-    case "ADD_ITEM": {
-      const existingItem = state.orderItems.find(
-        (i) => i.productId === action.item.productId && i.type === action.item.type
-      );
-      if (existingItem && action.item.type === "bottle") {
-        const newQuantity = existingItem.quantity + action.item.quantity;
-        return {
-          ...state,
-          orderItems: state.orderItems.map((i) =>
-            i.id === existingItem.id ? { ...i, quantity: newQuantity, totalPrice: newQuantity * i.unitPrice } : i
-          ),
-        };
-      }
-      const newItem: OrderItem = {
-        ...action.item,
-        id: getUUID(),
-        totalPrice: action.item.quantity * action.item.unitPrice,
-      };
-      return { ...state, orderItems: [...state.orderItems, newItem] };
-    }
-    case "REMOVE_ITEM":
-      return {
-        ...state,
-        orderItems: state.orderItems.filter((i) => i.id !== action.itemId),
-      };
-    case "UPDATE_QUANTITY": {
-        if(action.quantity <= 0) {
-            return {
-                ...state,
-                orderItems: state.orderItems.filter((i) => i.id !== action.itemId),
-            };
-        }
-      return {
-        ...state,
-        orderItems: state.orderItems.map((i) =>
-          i.id === action.itemId ? { ...i, quantity: action.quantity, totalPrice: action.quantity * i.unitPrice } : i
-        ),
-      };
-    }
-    case "CLEAR_ORDER":
-      return { ...state, orderItems: [] };
-    case "SET_ORDER":
-      return { ...state, orderItems: action.items };
-    default:
-      return state;
-  }
-}
-
+import { posReducer } from "./pos-helpers";
 
 export default function POSPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
@@ -98,7 +33,7 @@ export default function POSPage() {
   }, []);
 
   const handleCheckout = useCallback((paymentMethod: 'Cash' | 'Card') => {
-    if (!user || state.orderItems.length === 0) return;
+    if (!user || state.orderItems.length === 0) return false;
     try {
       saveTransaction(user.id, state.orderItems, paymentMethod);
       dispatch({ type: "CLEAR_ORDER" });
