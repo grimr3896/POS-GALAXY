@@ -15,8 +15,8 @@ const seedProducts: Product[] = [
   { id: 3, sku: "VODK750", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 800, sellPrice: 1500, thresholdQuantity: 5 },
   { id: 4, sku: "COKE500", name: "Coca-Cola", image: PlaceHolderImages.find(p => p.id === 'coke')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 40, sellPrice: 80, thresholdQuantity: 20 },
   { id: 5, sku: "WTR1000", name: "Mineral Water", image: PlaceHolderImages.find(p => p.id === 'water')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 50, sellPrice: 100, thresholdQuantity: 20 },
-  { id: 6, sku: "WHISKEYD", name: "Whiskey", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 20000, sellPrice: 10000, thresholdQuantity: 5000 },
-  { id: 7, sku: "VODKAD", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 18000, sellPrice: 9000, thresholdQuantity: 5000 },
+  { id: 6, sku: "WHISKEYD", name: "Whiskey", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 20000, sellPrice: 40, thresholdQuantity: 5000 },
+  { id: 7, sku: "VODKAD", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 18000, sellPrice: 35, thresholdQuantity: 5000 },
 ];
 
 const seedInventory: InventoryItem[] = [
@@ -25,7 +25,7 @@ const seedInventory: InventoryItem[] = [
   { id: 3, productId: 3, quantityUnits: 12, lastRestockAt: new Date().toISOString() },
   { id: 4, productId: 4, quantityUnits: 100, lastRestockAt: new Date().toISOString() },
   { id: 5, productId: 5, quantityUnits: 80, lastRestockAt: new Date().toISOString() },
-  { id: 6, productId: 6, capacityML: 50000, currentML: 45750, lastRestockAt: new Date().toISOString() },
+  { id: 6, productId: 6, capacityML: 50000, currentML: 24000, lastRestockAt: new Date().toISOString() },
   { id: 7, productId: 7, capacityML: 25000, currentML: 15000, lastRestockAt: new Date().toISOString() },
 ];
 
@@ -94,9 +94,6 @@ export const saveUser = (userData: Omit<User, 'id'> & { id?: number }): User => 
 };
 export const deleteUser = (userId: number): void => {
     let users = getUsers();
-    if (users.length <= 1) {
-      throw new Error("Cannot delete the last user.");
-    }
     users = users.filter(u => u.id !== userId);
     saveToStorage("users", users);
 };
@@ -123,7 +120,7 @@ export const saveProduct = (productData: Omit<Product & { inventory?: InventoryI
     const productIndex = products.findIndex(p => p.id === productData.id);
     if (productIndex !== -1) {
       const { inventory: inventoryData, ...updatedProduct } = productData;
-      products[productIndex] = { ...products[productIndex], ...updatedProduct };
+      products[productIndex] = { ...products[productIndex], ...updatedProduct, image: productData.image || 'https://picsum.photos/seed/placeholder/400/400' };
       
       if (inventoryData) {
         const invIndex = inventory.findIndex(i => i.productId === productData.id);

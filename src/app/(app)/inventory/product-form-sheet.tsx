@@ -63,6 +63,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: "bottle",
+      image: "",
     },
   });
 
@@ -128,7 +129,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="image" className="text-right">Image URL</Label>
-              <Input id="image" {...register("image")} className="col-span-3" />
+              <Input id="image" {...register("image")} className="col-span-3" placeholder="https://example.com/image.png" />
               {errors.image && <p className="col-span-4 text-right text-sm text-destructive">{errors.image.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -188,3 +189,5 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
     </Sheet>
   );
 }
+
+    
