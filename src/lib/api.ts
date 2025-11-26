@@ -247,7 +247,7 @@ export const getDashboardData = () => {
     const todaysSales = todaysTransactions.reduce((acc, t) => acc + t.totalAmount, 0);
     const todaysProfit = todaysTransactions.reduce((acc, t) => acc + (t.profit || 0), 0);
 
-    const salesByProduct = transactions.flatMap(t => t.items).reduce((acc, item) => {
+    const salesByProduct = todaysTransactions.flatMap(t => t.items).reduce((acc, item) => {
         acc[item.productId] = (acc[item.productId] || 0) + item.lineTotal;
         return acc;
     }, {} as Record<number, number>);
