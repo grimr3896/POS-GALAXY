@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "guinness",
+      "description": "A bottle of Guinness",
+      "imageUrl": "https://images.unsplash.com/photo-1644085159285-5fd924740cb3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxiZWVyJTIwYm90dGxlfGVufDB8fHx8MTc2NDA0Mzk4N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "beer bottle"
+    },
+    {
+      "id": "tascar",
+      "description": "A bottle of Tascar beer",
+      "imageUrl": "https://images.unsplash.com/photo-1585620384249-5cf9442c87f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxiZWVyJTIwYm90dGxlfGVufDB8fHx8MTc2NDA0Mzk4N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "beer bottle"
+    },
+    {
+      "id": "vodka",
+      "description": "A bottle of Vodka",
+      "imageUrl": "https://images.unsplash.com/photo-1729435023550-5641bb87d0cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx2b2RrYSUyMGJvdHRsZXxlbnwwfHx8fDE3NjQxNTEzNzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vodka bottle"
+    },
+    {
+      "id": "coke",
+      "description": "A bottle of Coca-Cola",
+      "imageUrl": "https://images.unsplash.com/photo-1734605641773-f2755bf7432d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzb2RhJTIwYm90dGxlfGVufDB8fHx8MTc2NDA4MDI1OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "soda bottle"
+    },
+    {
+      "id": "water",
+      "description": "A bottle of mineral water",
+      "imageUrl": "https://images.unsplash.com/photo-1530711654140-23ef9ad45094?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8d2F0ZXIlMjBib3R0bGV8ZW58MHx8fHwxNzY0MDgxNjkxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "water bottle"
+    },
+    {
+      "id": "whiskey-drum",
+      "description": "A drum of whiskey",
+      "imageUrl": "https://images.unsplash.com/photo-1613952936263-61dc8cddf6c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx3aGlza2V5JTIwYmFycmVsfGVufDB8fHx8MTc2NDE1MTM3Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "whiskey barrel"
+    }
+  ]
 }
