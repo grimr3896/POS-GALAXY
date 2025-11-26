@@ -159,7 +159,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                 <Input id="image-upload" type="file" onChange={handleImageChange} accept="image/png, image/jpeg, image/webp" className="mb-2" />
                 {imagePreview && (
                     <div className="relative w-24 h-24 mt-2">
-                        <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded-md" />
+                        <Image src={imagePreview} alt="Product preview" fill objectFit="cover" className="rounded-md" />
                     </div>
                 )}
               </div>

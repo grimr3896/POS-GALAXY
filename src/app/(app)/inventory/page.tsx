@@ -10,7 +10,7 @@ import { ProductFormSheet } from "./product-form-sheet";
 export default function InventoryPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSheetOpen, setIsSheetOpen] = useState(true);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
   const { toast } = useToast();
 
@@ -31,17 +31,35 @@ export default function InventoryPage() {
   };
 
   const handleEditProduct = (product: Product & { inventory?: InventoryItem }) => {
-    setEditingProduct(product);
-    setIsSheetOpen(true);
+    const password = prompt("Please enter the password to edit product details:");
+    if (password === "626-jarvis") {
+      setEditingProduct(product);
+      setIsSheetOpen(true);
+    } else if (password !== null) {
+      toast({
+        variant: "destructive",
+        title: "Incorrect Password",
+        description: "You do not have permission to edit product details.",
+      });
+    }
   };
 
   const handleDeleteProduct = (productId: number) => {
-    try {
-      deleteProduct(productId);
-      toast({ title: "Product Deleted", description: "The product has been removed." });
-      fetchData();
-    } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Could not delete the product." });
+    const password = prompt("Please enter the password to delete this product:");
+     if (password === "626-jarvis") {
+        try {
+          deleteProduct(productId);
+          toast({ title: "Product Deleted", description: "The product has been removed." });
+          fetchData();
+        } catch (error) {
+          toast({ variant: "destructive", title: "Error", description: "Could not delete the product." });
+        }
+    } else if (password !== null) {
+         toast({
+            variant: "destructive",
+            title: "Incorrect Password",
+            description: "You do not have permission to delete this product.",
+      });
     }
   };
   
