@@ -10,6 +10,8 @@ import { TransactionDetailModal } from "./transaction-detail-modal";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { PasswordPromptDialog } from "@/app/(app)/inventory/password-prompt-dialog";
+
 
 export default function SalesHistoryPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -24,6 +26,8 @@ export default function SalesHistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [employeeFilter, setEmployeeFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [transactionToReverse, setTransactionToReverse] = useState<Transaction | null>(null);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -79,17 +83,23 @@ export default function SalesHistoryPage() {
     setSelectedTransaction(null);
   };
   
-  const handleReverseAndEdit = (transaction: Transaction) => {
-    const password = prompt("To reverse this sale, please enter the admin password:");
+  const handleReverseRequest = (transaction: Transaction) => {
+    setTransactionToReverse(transaction);
+    setIsPasswordDialogOpen(true);
+  };
+  
+  const handlePasswordConfirm = (password: string) => {
+     if (!transactionToReverse) return;
+     
     if (password === "626-jarvis") {
         try {
-            const newOrderItems: OrderItem[] = reverseTransaction(transaction.id);
+            const newOrderItems: OrderItem[] = reverseTransaction(transactionToReverse.id);
             setPendingOrder(newOrderItems);
             fetchData();
             handleCloseModal();
             toast({
                 title: "Sale Reversed",
-                description: `Sale ${transaction.id} has been reversed. Items loaded into POS for editing.`,
+                description: `Sale ${transactionToReverse.id} has been reversed. Items loaded into POS for editing.`,
             });
             router.push("/pos");
         } catch (error: any) {
@@ -99,13 +109,16 @@ export default function SalesHistoryPage() {
                 description: error.message || "Could not reverse the transaction.",
             });
         }
-    } else if (password !== null) {
+    } else {
         toast({
             variant: "destructive",
             title: "Incorrect Password",
             description: "You do not have permission to perform this action.",
         });
     }
+    
+    setIsPasswordDialogOpen(false);
+    setTransactionToReverse(null);
   };
 
   return (
@@ -139,9 +152,16 @@ export default function SalesHistoryPage() {
           transaction={selectedTransaction}
           isOpen={!!selectedTransaction}
           onOpenChange={handleCloseModal}
-          onReverseAndEdit={handleReverseAndEdit}
+          onReverseAndEdit={handleReverseRequest}
         />
        )}
+        <PasswordPromptDialog
+            isOpen={isPasswordDialogOpen}
+            onOpenChange={setIsPasswordDialogOpen}
+            onConfirm={handlePasswordConfirm}
+            title="Enter Password to Reverse Sale"
+            description="Reversing a sale is permanent. This action will restore stock and create a reversal record."
+        />
     </div>
   );
 }

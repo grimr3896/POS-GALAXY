@@ -6,6 +6,7 @@ import type { User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeTable } from "./employees-table";
 import { EmployeeFormSheet } from "./employee-form-sheet";
+import { PasswordPromptDialog } from "@/app/(app)/inventory/password-prompt-dialog";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<User[]>([]);
@@ -13,6 +14,8 @@ export default function EmployeesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
   const { toast } = useToast();
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<User | null>(null);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -29,18 +32,42 @@ export default function EmployeesPage() {
     setIsSheetOpen(true);
   };
 
-  const handleEditEmployee = (employee: User) => {
-    setEditingEmployee(employee);
-    setIsSheetOpen(true);
+  const handleEditRequest = (employee: User) => {
+    setEmployeeToEdit(employee);
+    setIsPasswordDialogOpen(true);
+  };
+  
+  const handlePasswordConfirm = (password: string) => {
+    if (password === "626-jarvis") {
+      setEditingEmployee(employeeToEdit);
+      setIsSheetOpen(true);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Incorrect Password",
+        description: "You do not have permission to edit employees.",
+      });
+    }
+    setIsPasswordDialogOpen(false);
+    setEmployeeToEdit(null);
   };
 
   const handleDeleteEmployee = (userId: number) => {
-    try {
-      deleteUser(userId);
-      toast({ title: "Employee Deleted", description: "The employee has been removed." });
-      fetchData();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message || "Could not delete the employee." });
+    const password = prompt("Please enter the password to delete this employee:");
+    if (password === "626-jarvis") {
+        try {
+        deleteUser(userId);
+        toast({ title: "Employee Deleted", description: "The employee has been removed." });
+        fetchData();
+        } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: error.message || "Could not delete the employee." });
+        }
+    } else if (password !== null) {
+        toast({
+            variant: "destructive",
+            title: "Incorrect Password",
+            description: "You do not have permission to delete this employee.",
+      });
     }
   };
 
@@ -68,7 +95,7 @@ export default function EmployeesPage() {
         data={employees}
         isLoading={loading}
         onAddEmployee={handleAddEmployee}
-        onEditEmployee={handleEditEmployee}
+        onEditEmployee={handleEditRequest}
         onDeleteEmployee={handleDeleteEmployee}
       />
       <EmployeeFormSheet
@@ -76,6 +103,13 @@ export default function EmployeesPage() {
         onOpenChange={setIsSheetOpen}
         onSubmit={handleFormSubmit}
         employee={editingEmployee}
+      />
+       <PasswordPromptDialog
+        isOpen={isPasswordDialogOpen}
+        onOpenChange={setIsPasswordDialogOpen}
+        onConfirm={handlePasswordConfirm}
+        title="Enter Password to Edit Employee"
+        description="You need administrator permissions to modify employee details."
       />
     </div>
   );
