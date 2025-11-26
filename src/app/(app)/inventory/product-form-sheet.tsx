@@ -31,6 +31,7 @@ const formSchema = z.object({
   id: z.number().optional(),
   name: z.string().min(2, "Name must be at least 2 characters."),
   sku: z.string().min(1, "SKU is required."),
+  image: z.string().url("Please enter a valid image URL.").or(z.literal("")).optional(),
   type: z.enum(["bottle", "drum"]),
   sellPrice: z.coerce.number().positive("Sell price must be positive."),
   thresholdQuantity: z.coerce.number().min(0, "Threshold must be non-negative."),
@@ -73,6 +74,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
         id: product.id,
         name: product.name,
         sku: product.sku,
+        image: product.image,
         type: product.type,
         sellPrice: product.sellPrice,
         thresholdQuantity: product.thresholdQuantity,
@@ -87,6 +89,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
         id: undefined,
         name: "",
         sku: "",
+        image: "",
         type: "bottle",
         sellPrice: 0,
         thresholdQuantity: 0,
@@ -122,6 +125,11 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
               <Label htmlFor="sku" className="text-right">SKU</Label>
               <Input id="sku" {...register("sku")} className="col-span-3" />
               {errors.sku && <p className="col-span-4 text-right text-sm text-destructive">{errors.sku.message}</p>}
+            </div>
+             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="image" className="text-right">Image URL</Label>
+              <Input id="image" {...register("image")} className="col-span-3" />
+              {errors.image && <p className="col-span-4 text-right text-sm text-destructive">{errors.image.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="type" className="text-right">Type</Label>
