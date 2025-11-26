@@ -29,9 +29,9 @@ export function TopProfitMakersChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top 5 Profit Makers</CardTitle>
+        <CardTitle>Product Profitability</CardTitle>
         <CardDescription>
-          Based on total profit generated today.
+          Total profit per product for today.
         </CardDescription>
       </CardHeader>
       <CardContent>

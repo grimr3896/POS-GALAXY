@@ -302,7 +302,6 @@ export const getDashboardData = () => {
 
     const topProfitMakers = Object.entries(profitByProduct)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
         .map(([name, total]) => ({ name, total }));
 
     const stockAlerts = products.filter(p => {
