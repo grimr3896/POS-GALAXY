@@ -48,6 +48,40 @@ export default function ReportsPage() {
 
     setReportData(filtered);
   }, [filters, transactions]);
+  
+  const createMailtoLink = (report: Transaction[]) => {
+    if(!report) return "";
+
+    const totalRevenue = report.reduce((acc, t) => acc + t.totalAmount, 0);
+    const totalProfit = report.reduce((acc, t) => acc + (t.profit || 0), 0);
+    const totalTransactions = report.length;
+
+    const subject = `Sales Report for ${filters.dateRange.from?.toLocaleDateString()} - ${filters.dateRange.to?.toLocaleDateString()}`;
+    const body = `
+Hi Team,
+
+Here is the sales report:
+
+- Date Range: ${filters.dateRange.from?.toLocaleDateString()} to ${filters.dateRange.to?.toLocaleDateString()}
+- Total Revenue: Ksh ${totalRevenue.toLocaleString()}
+- Total Profit: Ksh ${totalProfit.toLocaleString()}
+- Total Transactions: ${totalTransactions}
+
+This is an automated summary. For a detailed breakdown, please see the attached file or view the dashboard.
+
+Thanks,
+Galaxy Inn POS System
+    `;
+
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+  
+  const handleSendEmail = () => {
+    if (reportData) {
+      const link = createMailtoLink(reportData);
+      window.location.href = link;
+    }
+  };
 
 
   return (
@@ -63,7 +97,7 @@ export default function ReportsPage() {
             </div>
             <div className="mt-4 flex gap-2 md:mt-0">
                 <Button onClick={handleGenerateReport} disabled={loading}>Generate Report</Button>
-                <Button variant="outline" disabled>Send via Email</Button>
+                <Button variant="outline" onClick={handleSendEmail} disabled={!reportData}>Send via Email</Button>
             </div>
           </div>
         </CardHeader>
