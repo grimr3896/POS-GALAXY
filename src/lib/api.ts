@@ -16,6 +16,7 @@ const seedProducts: Product[] = [
   { id: 4, sku: "COKE500", name: "Coca-Cola", image: PlaceHolderImages.find(p => p.id === 'coke')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 40, sellPrice: 80, thresholdQuantity: 20 },
   { id: 5, sku: "WTR1000", name: "Mineral Water", image: PlaceHolderImages.find(p => p.id === 'water')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 50, sellPrice: 100, thresholdQuantity: 20 },
   { id: 6, sku: "WHISKEYD", name: "Whiskey", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 20000, sellPrice: 10000, thresholdQuantity: 5000 },
+  { id: 7, sku: "VODKAD", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 18000, sellPrice: 9000, thresholdQuantity: 5000 },
 ];
 
 const seedInventory: InventoryItem[] = [
@@ -25,6 +26,7 @@ const seedInventory: InventoryItem[] = [
   { id: 4, productId: 4, quantityUnits: 100, lastRestockAt: new Date().toISOString() },
   { id: 5, productId: 5, quantityUnits: 80, lastRestockAt: new Date().toISOString() },
   { id: 6, productId: 6, capacityML: 50000, currentML: 45750, lastRestockAt: new Date().toISOString() },
+  { id: 7, productId: 7, capacityML: 25000, currentML: 15000, lastRestockAt: new Date().toISOString() },
 ];
 
 // --- LocalStorage Wrapper ---
@@ -281,3 +283,5 @@ export const getDashboardData = () => {
         stockAlerts
     };
 }
+
+    

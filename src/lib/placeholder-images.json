@@ -35,6 +35,12 @@
       "description": "A drum of whiskey",
       "imageUrl": "https://images.unsplash.com/photo-1613952936263-61dc8cddf6c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx3aGlza2V5JTIwYmFycmVsfGVufDB8fHx8MTc2NDE1MTM3Nnww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "whiskey barrel"
+    },
+    {
+      "id": "vodka-drum",
+      "description": "A drum of vodka",
+      "imageUrl": "https://images.unsplash.com/photo-1596702952549-c1501a35fe84?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx2b2RrYSUyMGRydW18ZW58MHx8fHwxNzY0MjQ4NjIyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vodka drum"
     }
   ]
 }

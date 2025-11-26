@@ -98,12 +98,17 @@ export default function POSPage() {
     dispatch({ type: "CLEAR_ORDER" });
   }
 
-  const drumProduct = products.find(p => p.type === 'drum');
+  const drumProducts = products.filter(p => p.type === 'drum');
+  const bottleProducts = products.filter(p => p.type === 'bottle');
 
   return (
     <div className="grid h-[calc(100vh-theme(spacing.28))] flex-1 grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="flex flex-col gap-6 lg:col-span-2">
-        {drumProduct && <ProductGrid products={products.filter(p => p.type === 'bottle')} drumProduct={drumProduct} onAddItem={handleAddItem} />}
+        <ProductGrid 
+          bottleProducts={bottleProducts}
+          drumProducts={drumProducts} 
+          onAddItem={handleAddItem} 
+        />
       </div>
       <OrderSummary
         items={state.orderItems}
@@ -118,3 +123,5 @@ export default function POSPage() {
     </div>
   );
 }
+
+    

@@ -10,15 +10,15 @@ import { DrumWidget } from "./drum-widget";
 import { createOrderItem } from "./pos-helpers";
 
 interface ProductGridProps {
-  products: (Product & { inventory?: InventoryItem })[];
-  drumProduct: Product & { inventory?: InventoryItem };
+  bottleProducts: (Product & { inventory?: InventoryItem })[];
+  drumProducts: (Product & { inventory?: InventoryItem })[];
   onAddItem: (item: Omit<OrderItem, "id" | "totalPrice">) => void;
 }
 
-export function ProductGrid({ products, drumProduct, onAddItem }: ProductGridProps) {
+export function ProductGrid({ bottleProducts, drumProducts, onAddItem }: ProductGridProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredProducts = products.filter((p) =>
+  const filteredProducts = bottleProducts.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -31,7 +31,11 @@ export function ProductGrid({ products, drumProduct, onAddItem }: ProductGridPro
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <DrumWidget product={drumProduct} onAddItem={onAddItem} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {drumProducts.map(product => (
+          <DrumWidget key={product.id} product={product} onAddItem={onAddItem} />
+        ))}
+      </div>
 
       <Card className="flex-1">
         <CardHeader>
@@ -82,3 +86,5 @@ export function ProductGrid({ products, drumProduct, onAddItem }: ProductGridPro
     </div>
   );
 }
+
+    
