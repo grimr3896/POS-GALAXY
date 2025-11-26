@@ -23,7 +23,7 @@ export function posReducer(state: POSState, action: POSAction): POSState {
       );
       
       if (existingItem) {
-        // If it exists, just increment the quantity.
+        // If it exists, just increment the quantity and recalculate total price.
         const newQuantity = existingItem.quantity + action.item.quantity;
         return {
           ...state,
