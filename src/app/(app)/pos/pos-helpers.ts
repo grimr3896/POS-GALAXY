@@ -87,9 +87,9 @@ export function createOrderItem(product: Product & { inventory?: InventoryItem }
     productId: product.id,
     name: `${product.name} (Pour)`,
     image: product.image,
-    quantity: quantity,
-    unitPrice: pricePerML,
-    buyPrice: costPerML,
+    quantity: quantity, // quantity is in ML
+    unitPrice: pricePerML, // price is per ML
+    buyPrice: costPerML, // cost is per ML
     type: "drum",
   };
 }

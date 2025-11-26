@@ -119,7 +119,7 @@ export function OrderSummary({
                   <div className="flex-1">
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {item.type === 'bottle' ? `${item.quantity} x Ksh ${item.unitPrice}` : `${item.quantity}ml @ Ksh ${item.unitPrice * 4}/250ml`}
+                      {item.type === 'bottle' ? `${item.quantity} x Ksh ${item.unitPrice}` : `${item.quantity}ml @ Ksh ${item.unitPrice.toFixed(2)}/ml`}
                     </p>
                   </div>
                   {item.type === 'bottle' ? (
