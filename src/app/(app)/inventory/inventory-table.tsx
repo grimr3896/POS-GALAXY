@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Product, InventoryItem } from "@/lib/types";
-import { useAuth } from "@/contexts/auth-context";
 
 interface InventoryTableProps {
   data: (Product & { inventory?: InventoryItem })[];
@@ -38,9 +37,6 @@ export function InventoryTable({
   onEditProduct,
   onDeleteProduct,
 }: InventoryTableProps) {
-  const { user } = useAuth();
-  const canEdit = user?.role === "Admin";
-
   const renderStock = (item: Product & { inventory?: InventoryItem }) => {
     if (!item.inventory) return <Badge variant="outline">N/A</Badge>;
     if (item.type === "bottle") {
@@ -84,11 +80,9 @@ export function InventoryTable({
               <TableHead className="hidden md:table-cell">Type</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Sell Price</TableHead>
-              {canEdit && (
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              )}
+              <TableHead>
+                <span className="sr-only">Actions</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -101,7 +95,7 @@ export function InventoryTable({
                     <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                    {canEdit && <TableCell><Skeleton className="h-8 w-8" /></TableCell>}
+                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                   </TableRow>
                 ))
               : data.map((product) => (
@@ -123,29 +117,27 @@ export function InventoryTable({
                     </TableCell>
                     <TableCell>{renderStock(product)}</TableCell>
                     <TableCell>Ksh {product.sellPrice.toLocaleString()}</TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEditProduct(product)}>
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => onDeleteProduct(product.id)}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onEditProduct(product)}>
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => onDeleteProduct(product.id)}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))}
           </TableBody>
