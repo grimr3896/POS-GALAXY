@@ -44,26 +44,48 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
   const getItemsSummary = (items: TransactionItem[]) => {
     if (!items || items.length === 0) return '—';
     
-    // Group pour items
-    const itemMap = new Map<string, { quantity: number, productName: string }>();
+    const itemMap = new Map<string, { quantity: number; productName: string }>();
+
     items.forEach(item => {
-      const key = item.productName;
-      if (item.productName.includes('(Pour)')) {
+        const isPour = item.productName.includes('(Pour)');
+        const productName = item.productName.replace(' (Pour)', '').trim();
+        let key = productName;
+        
+        if (!isPour) {
+            // For non-pour items, use a unique key to count them separately
+            key = `${productName}-${item.id}`;
+        }
+
         const existing = itemMap.get(key);
         if (existing) {
-          existing.quantity += item.quantity;
+            existing.quantity += item.quantity;
         } else {
-          itemMap.set(key, { quantity: item.quantity, productName: item.productName });
+            itemMap.set(key, { quantity: item.quantity, productName: item.productName });
         }
-      } else {
-         itemMap.set(key + item.id, { quantity: item.quantity, productName: item.productName });
-      }
     });
 
-    return Array.from(itemMap.values()).map(item => 
-      `${item.productName.replace(' (Pour)', '')} ×${item.productName.includes('(Pour)') ? `${item.quantity}ml` : item.quantity}`
-    ).join(', ');
+    // Post-process to group non-pour items by name
+     const finalItemMap = new Map<string, { quantity: number; productName: string; isPour: boolean }>();
+     for (const item of itemMap.values()) {
+        const isPour = item.productName.includes('(Pour)');
+        const productName = item.productName.replace(' (Pour)', '').trim();
+        const finalKey = isPour ? productName : item.productName;
+        const existing = finalItemMap.get(finalKey);
+        if(existing) {
+            existing.quantity += item.quantity;
+        } else {
+            finalItemMap.set(finalKey, { quantity: item.quantity, productName: item.productName, isPour });
+        }
+     }
+
+
+    return Array.from(finalItemMap.values()).map(item => {
+        const name = item.productName.replace(' (Pour)', '');
+        const quantity = item.isPour ? `${item.quantity}ml` : `×${item.quantity}`;
+        return `${name} ${quantity}`;
+    }).join(', ');
   }
+
 
   return (
     <div className="w-full overflow-auto rounded-md border">
