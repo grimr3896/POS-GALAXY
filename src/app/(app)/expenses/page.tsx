@@ -34,8 +34,17 @@ export default function ExpensesPage() {
   };
 
   const handleEditExpense = (expense: Expense) => {
-    setEditingExpense(expense);
-    setIsSheetOpen(true);
+    const password = prompt("Please enter the password to edit this expense:");
+    if (password === "626-jarvis") {
+      setEditingExpense(expense);
+      setIsSheetOpen(true);
+    } else if (password !== null) {
+      toast({
+        variant: "destructive",
+        title: "Incorrect Password",
+        description: "You do not have permission to edit this expense.",
+      });
+    }
   };
 
   const handleDeleteExpense = (expenseId: number) => {
