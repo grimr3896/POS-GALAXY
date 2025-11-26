@@ -7,7 +7,7 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "InnKeeper POS",
+  title: "Galaxy Inn POS",
   description: "A Point-of-Sale system for the Galaxy Inn",
 };
 

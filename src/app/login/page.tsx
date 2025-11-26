@@ -42,7 +42,7 @@ export default function LoginPage() {
             <div className="mb-4 flex justify-center">
               <Icons.logo className="h-12 w-12 text-primary" />
             </div>
-            <CardTitle className="text-2xl">InnKeeper POS</CardTitle>
+            <CardTitle className="text-2xl">Galaxy Inn</CardTitle>
             <CardDescription>
               Enter your Company Card ID to sign in.
             </CardDescription>

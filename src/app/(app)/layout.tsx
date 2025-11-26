@@ -33,7 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const getPageTitle = () => {
     const currentNavItem = navItems.find((item) => pathname.startsWith(item.href));
-    return currentNavItem ? currentNavItem.label : "InnKeeper POS";
+    return currentNavItem ? currentNavItem.label : "Galaxy Inn";
   };
 
   return (
@@ -43,7 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex h-10 items-center gap-2 px-2">
             <Icons.logo className="size-6 shrink-0 text-sidebar-primary" />
             <span className="truncate text-lg font-semibold text-sidebar-foreground">
-              InnKeeper POS
+              Galaxy Inn
             </span>
           </div>
         </SidebarHeader>

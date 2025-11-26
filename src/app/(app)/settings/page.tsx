@@ -53,7 +53,7 @@ export default function SettingsPage() {
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      appName: "InnKeeper POS",
+      appName: "Galaxy Inn",
       currency: "KSH",
       taxRate: 16,
       idleTimeout: 300,
