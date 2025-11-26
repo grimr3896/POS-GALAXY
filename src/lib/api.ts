@@ -85,6 +85,63 @@ export const getProductsWithInventory = () => {
     });
 }
 
+export const saveProduct = (productData: Omit<Product & { inventory?: InventoryItem }, 'id'> & { id?: number }): Product => {
+  const products = getProducts();
+  const inventory = getInventory();
+
+  if (productData.id) { // Update existing product
+    const productIndex = products.findIndex(p => p.id === productData.id);
+    if (productIndex !== -1) {
+      const { inventory: inventoryData, ...updatedProduct } = productData;
+      products[productIndex] = { ...products[productIndex], ...updatedProduct };
+      
+      if (inventoryData) {
+        const invIndex = inventory.findIndex(i => i.productId === productData.id);
+        if (invIndex !== -1) {
+          inventory[invIndex] = { ...inventory[invIndex], ...inventoryData };
+        }
+      }
+    }
+    saveToStorage("products", products);
+    saveToStorage("inventory", inventory);
+    return products[productIndex];
+  } else { // Create new product
+    const newId = (products.reduce((maxId, p) => Math.max(p.id, maxId), 0)) + 1;
+    const newProduct: Product = {
+      ...productData,
+      id: newId,
+      image: productData.image || 'https://picsum.photos/seed/placeholder/400/400'
+    };
+    products.push(newProduct);
+    
+    const newInventoryItem: InventoryItem = {
+      id: newId,
+      productId: newId,
+      quantityUnits: productData.inventory?.quantityUnits || 0,
+      capacityML: productData.inventory?.capacityML || 0,
+      currentML: productData.inventory?.currentML || 0,
+      lastRestockAt: new Date().toISOString(),
+    };
+    inventory.push(newInventoryItem);
+    
+    saveToStorage("products", products);
+    saveToStorage("inventory", inventory);
+    return newProduct;
+  }
+};
+
+export const deleteProduct = (productId: number) => {
+  let products = getProducts();
+  let inventory = getInventory();
+
+  products = products.filter(p => p.id !== productId);
+  inventory = inventory.filter(i => i.productId !== productId);
+
+  saveToStorage("products", products);
+  saveToStorage("inventory", inventory);
+};
+
+
 // Transactions
 export const getTransactions = (): Transaction[] => getFromStorage("transactions", []);
 export const saveTransaction = (userId: number, items: OrderItem[], paymentMethod: 'Cash' | 'Card'): Transaction => {
