@@ -48,12 +48,21 @@ export default function ExpensesPage() {
   };
 
   const handleDeleteExpense = (expenseId: number) => {
-    try {
-      deleteExpense(expenseId);
-      toast({ title: "Expense Deleted", description: "The expense has been removed." });
-      fetchData();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message || "Could not delete the expense." });
+    const password = prompt("Please enter the password to delete this expense:");
+    if (password === "626-jarvis") {
+        try {
+          deleteExpense(expenseId);
+          toast({ title: "Expense Deleted", description: "The expense has been removed." });
+          fetchData();
+        } catch (error: any) {
+          toast({ variant: "destructive", title: "Error", description: error.message || "Could not delete the expense." });
+        }
+    } else if (password !== null) {
+         toast({
+            variant: "destructive",
+            title: "Incorrect Password",
+            description: "You do not have permission to delete this expense.",
+      });
     }
   };
 
