@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { getTransactions, getUsers } from "@/lib/api";
 import type { Transaction, User } from "@/lib/types";
-import { useAuth } from "@/contexts/auth-context";
 import { SalesHistoryTable } from "./sales-history-table";
 import { SalesHistoryFilters, type DateRange } from "./sales-history-filters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,6 @@ export default function SalesHistoryPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
 
   // Filtering state
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,11 +28,6 @@ export default function SalesHistoryPage() {
   const filteredTransactions = useMemo(() => {
     let filtered = transactions;
 
-    // Apply role-based filtering first
-    if (user?.role === "Cashier") {
-      filtered = filtered.filter((t) => t.userId === user.id);
-    }
-
     // Apply search term filter
     if (searchTerm) {
       filtered = filtered.filter((t) =>
@@ -45,7 +38,7 @@ export default function SalesHistoryPage() {
     }
 
     // Apply employee filter
-    if (user?.role !== "Cashier" && employeeFilter !== "all") {
+    if (employeeFilter !== "all") {
        filtered = filtered.filter((t) => t.userId === parseInt(employeeFilter));
     }
 
@@ -62,7 +55,7 @@ export default function SalesHistoryPage() {
     }
 
     return filtered;
-  }, [transactions, searchTerm, employeeFilter, dateRange, user]);
+  }, [transactions, searchTerm, employeeFilter, dateRange]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,7 +72,7 @@ export default function SalesHistoryPage() {
                 dateRange={dateRange}
                 onDateRangeChange={setDateRange}
                 employees={users}
-                disabled={user?.role === "Cashier"}
+                disabled={false}
             />
             <SalesHistoryTable
                 transactions={filteredTransactions}

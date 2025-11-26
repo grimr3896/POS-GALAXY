@@ -4,11 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { getUsers, saveUser, deleteUser } from "@/lib/api";
 import type { User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/auth-context";
 import { EmployeeTable } from "./employees-table";
 import { EmployeeFormSheet } from "./employee-form-sheet";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users } from "lucide-react";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<User[]>([]);
@@ -16,7 +13,6 @@ export default function EmployeesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -65,23 +61,6 @@ export default function EmployeesPage() {
       });
     }
   };
-
-  if (user?.role !== "Admin") {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Access Denied</CardTitle>
-          <CardDescription>
-            You do not have permission to view this page.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center gap-4 py-20 text-muted-foreground">
-          <Users className="h-16 w-16" />
-          <p>Contact an administrator for access.</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-6">

@@ -1,29 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useAuth } from "@/contexts/auth-context";
-import { Settings, ShieldAlert } from "lucide-react";
+import { Settings } from "lucide-react";
 
 export default function SettingsPage() {
-  const { user } = useAuth();
-
-  if (user?.role !== "Admin") {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Access Denied</CardTitle>
-          <CardDescription>
-            You do not have the required permissions to access this page.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center gap-4 py-20 text-muted-foreground">
-          <ShieldAlert className="h-16 w-16" />
-          <p>Only Administrators can access system settings.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
