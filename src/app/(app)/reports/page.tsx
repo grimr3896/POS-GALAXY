@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { ReportFilters, type ReportFiltersState } from "./report-filters";
 import { getUsers, getTransactions, getProducts } from "@/lib/api";
-import type { User, Transaction, Product } from "@/lib/types";
+import type { User, Transaction, Product, TransactionItem } from "@/lib/types";
 import { GeneratedReport } from "./generated-report";
 
 export default function ReportsPage() {
@@ -95,37 +95,76 @@ Galaxy Inn POS System
     }
   };
   
+  const getGroupedItemsForCSV = (items: TransactionItem[]) => {
+    if (!items || items.length === 0) return '';
+    const grouped = items.reduce((acc, item) => {
+      const name = item.productName.replace(' (Pour)', '').trim();
+      const isPour = item.productName.includes('(Pour)');
+      
+      const key = isPour ? `${name} (Pour)` : name;
+
+      if (!acc[key]) {
+        acc[key] = { quantity: 0, isPour };
+      }
+      acc[key].quantity += item.quantity;
+      
+      return acc;
+    }, {} as Record<string, { quantity: number; isPour: boolean }>);
+
+    return Object.entries(grouped)
+      .map(([name, { quantity, isPour }]) => {
+        if (isPour) {
+          return `${name}: ${quantity}ml`;
+        }
+        return `${quantity}x ${name}`;
+      })
+      .join('; ');
+  };
+
   const handleDownloadReport = () => {
     if (!reportData) return;
-
+  
     const allUsers = getUsers();
     const getUserName = (userId: number) => allUsers.find(u => u.id === userId)?.name || "Unknown";
-
+  
     const headers = ["Transaction ID", "Date", "Time", "Employee", "Items", "Total Amount", "Total Cost", "Profit", "Tax", "Payment Method", "Status"];
-    
+  
+    const escapeCsvField = (field: any) => {
+      if (field === null || field === undefined) {
+        return "";
+      }
+      const stringField = String(field);
+      // If the field contains a comma, a quote, or a newline, wrap it in double quotes.
+      if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+        // Escape existing double quotes by doubling them
+        return `"${stringField.replace(/"/g, '""')}"`;
+      }
+      return stringField;
+    };
+  
     const csvContent = [
       headers.join(","),
       ...reportData.map(t => [
-        t.id,
-        new Date(t.timestamp).toLocaleDateString(),
-        new Date(t.timestamp).toLocaleTimeString(),
-        getUserName(t.userId),
-        `"${t.items.map(i => `${i.quantity}x ${i.productName}`).join("; ")}"`,
-        t.totalAmount,
-        t.totalCost,
-        t.profit,
-        t.tax,
-        t.paymentMethod,
-        t.status,
+        escapeCsvField(t.id),
+        escapeCsvField(new Date(t.timestamp).toLocaleDateString()),
+        escapeCsvField(new Date(t.timestamp).toLocaleTimeString()),
+        escapeCsvField(getUserName(t.userId)),
+        escapeCsvField(getGroupedItemsForCSV(t.items)),
+        escapeCsvField(t.totalAmount),
+        escapeCsvField(t.totalCost),
+        escapeCsvField(t.profit),
+        escapeCsvField(t.tax),
+        escapeCsvField(t.paymentMethod),
+        escapeCsvField(t.status),
       ].join(","))
     ].join("\n");
-
+  
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    const fromDate = filters.dateRange.from?.toISOString().split('T')[0];
-    const toDate = filters.dateRange.to?.toISOString().split('T')[0];
+    const fromDate = filters.dateRange.from?.toISOString().split('T')[0] || 'start';
+    const toDate = filters.dateRange.to?.toISOString().split('T')[0] || 'end';
     link.setAttribute("download", `report_${fromDate}_to_${toDate}.csv`);
     document.body.appendChild(link);
     link.click();
