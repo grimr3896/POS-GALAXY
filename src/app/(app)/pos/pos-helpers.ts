@@ -1,6 +1,6 @@
 "use client";
 
-import type { OrderItem, Product } from "@/lib/types";
+import type { OrderItem, Product, ProductPourVariant } from "@/lib/types";
 import { getUUID } from "@/lib/utils";
 
 type POSState = {
@@ -17,9 +17,9 @@ export type POSAction =
 export function posReducer(state: POSState, action: POSAction): POSState {
   switch (action.type) {
     case "ADD_ITEM": {
-      // For both 'bottle' and 'pour' types, we find if an item with the same productId exists.
+      // Find existing item based on product ID and pour size (if it's a pour)
       const existingItem = state.orderItems.find(
-        (i) => i.productId === action.item.productId
+        (i) => i.productId === action.item.productId && i.pourSizeML === action.item.pourSizeML
       );
       
       if (existingItem) {
@@ -69,9 +69,21 @@ export function posReducer(state: POSState, action: POSAction): POSState {
   }
 }
 
-export function createOrderItem(product: Product, quantity: number, type: 'bottle' | 'pour'): Omit<OrderItem, "id" | "totalPrice"> {
-  // The logic is now simpler: the price is just the product's sellPrice,
-  // as pour variants are now their own products with their own prices.
+export function createOrderItem(product: Product, quantity: number, type: 'bottle' | 'pour', variant?: ProductPourVariant): Omit<OrderItem, "id" | "totalPrice"> {
+  if (type === 'pour' && variant) {
+    return {
+      productId: product.id,
+      name: `${product.name} (${variant.name})`,
+      image: product.image,
+      quantity: quantity,
+      unitPrice: variant.sellPrice,
+      buyPrice: product.buyPrice * variant.pourSizeML, // Cost of the pour
+      type: 'pour',
+      pourSizeML: variant.pourSizeML,
+    };
+  }
+  
+  // Logic for 'bottle' type
   return {
     productId: product.id,
     name: product.name,
@@ -79,6 +91,6 @@ export function createOrderItem(product: Product, quantity: number, type: 'bottl
     quantity: quantity,
     unitPrice: product.sellPrice,
     buyPrice: product.buyPrice,
-    type: type,
+    type: 'bottle',
   };
 }

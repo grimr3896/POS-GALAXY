@@ -2,9 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { Product, InventoryItem, OrderItem } from "@/lib/types";
+import type { Product, InventoryItem, OrderItem, ProductPourVariant } from "@/lib/types";
 import { createOrderItem } from "./pos-helpers";
-import { getPourVariantsForDrum } from "@/lib/api";
 
 interface DrumWidgetProps {
   drumProduct: Product & { inventory?: InventoryItem };
@@ -12,16 +11,14 @@ interface DrumWidgetProps {
 }
 
 export function DrumWidget({ drumProduct, onAddItem }: DrumWidgetProps) {
-  const { inventory } = drumProduct;
+  const { inventory, pourVariants } = drumProduct;
   const currentLevel = inventory?.currentML || 0;
   const capacity = inventory?.capacityML || 1;
   const fillPercentage = (currentLevel / capacity) * 100;
   
-  const pourVariants = getPourVariantsForDrum(drumProduct.id);
-
-  const handlePour = (variant: Product) => {
-    if (variant.pourSizeML && currentLevel >= variant.pourSizeML) {
-      const orderItem = createOrderItem(variant, 1, 'pour');
+  const handlePour = (variant: ProductPourVariant) => {
+    if (currentLevel >= variant.pourSizeML) {
+      const orderItem = createOrderItem(drumProduct, 1, 'pour', variant);
       onAddItem(orderItem);
     }
   };
@@ -52,19 +49,18 @@ export function DrumWidget({ drumProduct, onAddItem }: DrumWidgetProps) {
         <div className="flex flex-1 flex-col gap-3">
             <p className="text-sm text-muted-foreground">Select a pour size:</p>
             <div className="grid grid-cols-3 gap-3">
-                {pourVariants.map(variant => (
+                {pourVariants?.map(variant => (
                     <Button 
                         key={variant.id} 
                         variant="outline" 
                         size="lg" 
-                        disabled={!variant.pourSizeML || currentLevel < variant.pourSizeML} 
+                        disabled={currentLevel < variant.pourSizeML} 
                         onClick={() => handlePour(variant)}
+                        className="flex flex-col h-auto py-2"
                     >
-                        {variant.pourSizeML && (
-                            variant.pourSizeML < 1000 
-                                ? `${variant.pourSizeML}ml` 
-                                : `${variant.pourSizeML / 1000}L`
-                        )}
+                        <span className="font-bold">{variant.name}</span>
+                        <span className="text-xs text-muted-foreground">({variant.pourSizeML}ml)</span>
+                        <span className="text-sm">Ksh {variant.sellPrice}</span>
                     </Button>
                 ))}
             </div>

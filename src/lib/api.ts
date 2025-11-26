@@ -1,6 +1,6 @@
 "use client";
 
-import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense } from "./types";
+import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant } from "./types";
 import { PlaceHolderImages } from "./placeholder-images";
 import { getUUID } from "@/lib/utils";
 
@@ -17,21 +17,41 @@ const seedProducts: Product[] = [
   { id: 4, sku: "COKE500", name: "Coca-Cola", image: PlaceHolderImages.find(p => p.id === 'coke')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 40, sellPrice: 80, thresholdQuantity: 20 },
   { id: 5, sku: "WTR1000", name: "Mineral Water", image: PlaceHolderImages.find(p => p.id === 'water')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 50, sellPrice: 100, thresholdQuantity: 20 },
   
-  // Parent Drum Products (not directly sold)
-  { id: 6, sku: "WHISKEYD", name: "Whiskey", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 20000, sellPrice: 0, thresholdQuantity: 5000 },
-  { id: 7, sku: "VODKAD", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "drum", unit: "L", buyPrice: 18000, sellPrice: 0, thresholdQuantity: 5000 },
-  
-  // Pour Variants (the actual sellable products)
-  // Whiskey Variants
-  { id: 8, parentProductId: 6, sku: "WHISKEY-250", name: "Whiskey (250ml)", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "pour", unit: "ml", buyPrice: 100, sellPrice: 250, thresholdQuantity: 0, pourSizeML: 250 },
-  { id: 9, parentProductId: 6, sku: "WHISKEY-500", name: "Whiskey (500ml)", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "pour", unit: "ml", buyPrice: 200, sellPrice: 450, thresholdQuantity: 0, pourSizeML: 500 },
-  { id: 10, parentProductId: 6, sku: "WHISKEY-1000", name: "Whiskey (1L)", image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', type: "pour", unit: "ml", buyPrice: 400, sellPrice: 850, thresholdQuantity: 0, pourSizeML: 1000 },
-
-  // Vodka Variants
-  { id: 11, parentProductId: 7, sku: "VODKA-250", name: "Vodka (250ml)", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "pour", unit: "ml", buyPrice: 90, sellPrice: 220, thresholdQuantity: 0, pourSizeML: 250 },
-  { id: 12, parentProductId: 7, sku: "VODKA-500", name: "Vodka (500ml)", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "pour", unit: "ml", buyPrice: 180, sellPrice: 400, thresholdQuantity: 0, pourSizeML: 500 },
-  { id: 13, parentProductId: 7, sku: "VODKA-1000", name: "Vodka (1L)", image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', type: "pour", unit: "ml", buyPrice: 360, sellPrice: 750, thresholdQuantity: 0, pourSizeML: 1000 },
+  // Drum Products with pour variants
+  { 
+    id: 6, 
+    sku: "WHISKEYD", 
+    name: "Whiskey", 
+    image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', 
+    type: "drum", 
+    unit: "L", 
+    buyPrice: 20, // Price per ML
+    sellPrice: 0, 
+    thresholdQuantity: 5000,
+    pourVariants: [
+        { id: 1, name: "250ml", pourSizeML: 250, sellPrice: 250 },
+        { id: 2, name: "500ml", pourSizeML: 500, sellPrice: 450 },
+        { id: 3, name: "1L", pourSizeML: 1000, sellPrice: 850 },
+    ]
+  },
+  { 
+    id: 7, 
+    sku: "VODKAD", 
+    name: "Vodka", 
+    image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', 
+    type: "drum", 
+    unit: "L", 
+    buyPrice: 18, // Price per ML
+    sellPrice: 0, 
+    thresholdQuantity: 5000,
+    pourVariants: [
+        { id: 1, name: "250ml", pourSizeML: 250, sellPrice: 220 },
+        { id: 2, name: "500ml", pourSizeML: 500, sellPrice: 400 },
+        { id: 3, name: "1L", pourSizeML: 1000, sellPrice: 750 },
+    ]
+  },
 ];
+
 
 const seedInventory: InventoryItem[] = [
   { id: 1, productId: 1, quantityUnits: 50, lastRestockAt: new Date().toISOString() },
@@ -134,12 +154,6 @@ export const getProductsWithInventory = () => {
     });
 }
 
-export const getPourVariantsForDrum = (drumProductId: number) => {
-    const allProducts = getProducts();
-    return allProducts.filter(p => p.type === 'pour' && p.parentProductId === drumProductId);
-};
-
-
 export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: InventoryItem, id?: number }): Product => {
   const products = getProducts();
   const inventory = getInventory();
@@ -149,7 +163,11 @@ export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: Inv
     const productIndex = products.findIndex(p => p.id === productData.id);
     if (productIndex !== -1) {
       const { inventory: inventoryData, ...updatedProduct } = productData;
-      products[productIndex] = { ...products[productIndex], ...updatedProduct, image: productData.image || products[productIndex].image || defaultImage };
+      products[productIndex] = { 
+          ...products[productIndex], 
+          ...updatedProduct, 
+          image: productData.image || products[productIndex].image || defaultImage 
+      };
       
       if (inventoryData) {
         const invIndex = inventory.findIndex(i => i.productId === productData.id);
@@ -164,10 +182,12 @@ export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: Inv
   } else { // Create new product
     const newId = (products.reduce((maxId, p) => Math.max(p.id, maxId), 0)) + 1;
     const { inventory: inventoryData, ...newProductData } = productData;
+    
     const newProduct: Product = {
       ...newProductData,
       id: newId,
-      image: productData.image || defaultImage
+      image: productData.image || defaultImage,
+      pourVariants: productData.type === 'drum' ? (productData.pourVariants || []).map((v, i) => ({...v, id: i})) : undefined,
     };
     products.push(newProduct);
     
@@ -204,7 +224,6 @@ export const getTransactions = (): Transaction[] => getFromStorage("transactions
 export const saveTransaction = (userId: number, items: OrderItem[], paymentMethod: 'Cash' | 'Card'): Transaction => {
     const transactions = getTransactions();
     const inventory = getInventory();
-    const allProducts = getProducts();
     
     const totalAmount = items.reduce((acc, item) => acc + item.totalPrice, 0);
     const totalCost = items.reduce((acc, item) => acc + (item.buyPrice * item.quantity), 0);
@@ -222,6 +241,7 @@ export const saveTransaction = (userId: number, items: OrderItem[], paymentMetho
             buyPrice: item.buyPrice,
             lineTotal: item.totalPrice,
             lineCost: item.buyPrice * item.quantity,
+            pourSizeML: item.pourSizeML,
         })),
         totalAmount,
         totalCost,
@@ -234,18 +254,15 @@ export const saveTransaction = (userId: number, items: OrderItem[], paymentMetho
 
     // Update inventory
     items.forEach(item => {
-        const productDetails = allProducts.find(p => p.id === item.productId);
-        if (!productDetails) return;
-
-        if (productDetails.type === 'bottle') {
+        if (item.type === 'bottle') {
             const invItem = inventory.find(i => i.productId === item.productId);
             if (invItem && invItem.quantityUnits !== undefined) {
                 invItem.quantityUnits -= item.quantity;
             }
-        } else if (productDetails.type === 'pour' && productDetails.parentProductId) {
-             const drumInvItem = inventory.find(i => i.productId === productDetails.parentProductId);
-             if (drumInvItem && drumInvItem.currentML !== undefined) {
-                const totalMLDeducted = (productDetails.pourSizeML || 0) * item.quantity;
+        } else if (item.type === 'pour') {
+             const drumInvItem = inventory.find(i => i.productId === item.productId);
+             if (drumInvItem && drumInvItem.currentML !== undefined && item.pourSizeML) {
+                const totalMLDeducted = item.pourSizeML * item.quantity;
                 drumInvItem.currentML -= totalMLDeducted;
              }
         }
@@ -283,10 +300,10 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
             if (invItem && invItem.quantityUnits !== undefined) {
                 invItem.quantityUnits += item.quantity;
             }
-        } else if (productDetails.type === 'pour' && productDetails.parentProductId) {
-            const drumInvItem = inventory.find(i => i.productId === productDetails.parentProductId);
+        } else if (productDetails.type === 'drum' && item.pourSizeML) {
+            const drumInvItem = inventory.find(i => i.productId === item.productId);
             if (drumInvItem && drumInvItem.currentML !== undefined) {
-                const totalMLRestored = (productDetails.pourSizeML || 0) * item.quantity;
+                const totalMLRestored = item.pourSizeML * item.quantity;
                 drumInvItem.currentML += totalMLRestored;
             }
         }
@@ -303,7 +320,7 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
         const product = allProducts.find(p => p.id === item.productId);
         if (!product) {
             // This should ideally not happen if data is consistent
-            return {
+             return {
                 id: getUUID(),
                 productId: item.productId,
                 name: item.productName,
@@ -315,6 +332,23 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
                 type: 'bottle', // fallback type
             };
         }
+        
+        if (product.type === 'drum' && item.pourSizeML) {
+             const variant = product.pourVariants?.find(v => v.pourSizeML === item.pourSizeML);
+             return {
+                id: getUUID(),
+                productId: product.id,
+                name: `${product.name} (${item.pourSizeML}ml)`,
+                image: product.image,
+                quantity: item.quantity,
+                unitPrice: variant?.sellPrice || 0,
+                buyPrice: product.buyPrice * item.pourSizeML,
+                totalPrice: item.lineTotal,
+                type: 'pour',
+                pourSizeML: item.pourSizeML,
+             }
+        }
+
         return {
             id: getUUID(),
             productId: product.id,
@@ -322,9 +356,9 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
             image: product.image,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            buyPrice: item.buyPrice,
+            buyPrice: product.buyPrice,
             totalPrice: item.lineTotal,
-            type: product.type as 'bottle' | 'pour'
+            type: 'bottle'
         };
     });
 };
@@ -404,13 +438,12 @@ export const getDashboardData = () => {
         .map(([name, total]) => ({ name, total: total || 0 }));
 
     const stockAlerts = products.filter(p => {
-        if (p.inventory) {
-            if (p.type === 'bottle' && p.inventory.quantityUnits !== undefined) {
-                return p.inventory.quantityUnits <= p.thresholdQuantity;
-            }
-            if (p.type === 'drum' && p.inventory.currentML !== undefined) {
-                return p.inventory.currentML <= p.thresholdQuantity;
-            }
+        if (!p.inventory) return false;
+        if (p.type === 'bottle') {
+            return (p.inventory.quantityUnits || 0) <= p.thresholdQuantity;
+        }
+        if (p.type === 'drum') {
+            return (p.inventory.currentML || 0) <= p.thresholdQuantity;
         }
         return false;
     });

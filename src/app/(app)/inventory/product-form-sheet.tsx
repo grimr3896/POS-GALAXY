@@ -19,14 +19,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import type { Product, InventoryItem } from "@/lib/types";
+import type { Product, InventoryItem, ProductPourVariant } from "@/lib/types";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { Trash2, PlusCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 type ProductWithInventory = Product & { inventory?: InventoryItem };
+
+const pourVariantSchema = z.object({
+  id: z.number().optional(),
+  name: z.string().min(1, "Variant name is required"),
+  pourSizeML: z.coerce.number().positive("Pour size must be positive"),
+  sellPrice: z.coerce.number().positive("Sell price must be positive"),
+});
 
 const formSchema = z.object({
   id: z.number().optional(),
@@ -35,13 +44,14 @@ const formSchema = z.object({
   image: z.string().optional(),
   type: z.enum(["bottle", "drum"]),
   buyPrice: z.coerce.number().min(0, "Buy price must be non-negative."),
-  sellPrice: z.coerce.number().positive("Sell price must be positive."),
+  sellPrice: z.coerce.number().positive("Sell price must be positive.").optional(),
   thresholdQuantity: z.coerce.number().min(0, "Threshold must be non-negative."),
   inventory: z.object({
     quantityUnits: z.coerce.number().min(0).optional(),
     currentML: z.coerce.number().min(0).optional(),
     capacityML: z.coerce.number().min(0).optional(),
   }).optional(),
+  pourVariants: z.array(pourVariantSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -68,54 +78,47 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
     defaultValues: {
       type: "bottle",
       image: "",
+      pourVariants: [],
     },
   });
 
   const productType = watch("type");
+  
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "pourVariants",
+  });
 
   useEffect(() => {
-    if (isOpen && product) {
-      const defaultValues = {
-        id: product.id,
-        name: product.name,
-        sku: product.sku,
-        image: product.image,
-        type: product.type,
-        buyPrice: product.buyPrice,
-        sellPrice: product.sellPrice,
-        thresholdQuantity: product.thresholdQuantity,
-        inventory: {
-          quantityUnits: product.inventory?.quantityUnits,
-          currentML: product.inventory?.currentML,
-          capacityML: product.inventory?.capacityML,
-        }
-      };
-      reset(defaultValues);
-      if (product.image) {
-        setImagePreview(product.image);
+    if (isOpen) {
+      if (product) {
+        const defaultValues: FormValues = {
+          ...product,
+          sellPrice: product.type === 'bottle' ? product.sellPrice : undefined,
+          // Ensure pourVariants is an array
+          pourVariants: product.pourVariants || [], 
+        };
+        reset(defaultValues);
+        if (product.image) setImagePreview(product.image);
       } else {
+        // Reset to a clean state for a new product
+        reset({
+          id: undefined,
+          name: "",
+          sku: "",
+          image: "",
+          type: "bottle",
+          buyPrice: 0,
+          sellPrice: 0,
+          thresholdQuantity: 0,
+          inventory: { quantityUnits: 0, currentML: 0, capacityML: 0 },
+          pourVariants: [],
+        });
         setImagePreview(null);
       }
-    } else if (isOpen && !product) {
-      reset({
-        id: undefined,
-        name: "",
-        sku: "",
-        image: "",
-        type: "bottle",
-        buyPrice: 0,
-        sellPrice: 0,
-        thresholdQuantity: 0,
-        inventory: {
-          quantityUnits: 0,
-          currentML: 0,
-          capacityML: 0,
-        }
-      });
-      setImagePreview(null);
     }
   }, [product, isOpen, reset]);
-
+  
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -136,13 +139,14 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg">
+      <SheetContent className="sm:max-w-2xl">
         <form onSubmit={handleSubmit(onSubmit)}>
           <SheetHeader>
             <SheetTitle>{formTitle}</SheetTitle>
             <SheetDescription>{formDescription}</SheetDescription>
           </SheetHeader>
-          <div className="grid gap-4 py-6">
+          <div className="grid gap-6 py-6 pr-4 max-h-[calc(100vh-150px)] overflow-y-auto">
+            {/* Common Fields */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">Name</Label>
               <Input id="name" {...register("name")} className="col-span-3" />
@@ -182,38 +186,87 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                 )}
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="threshold" className="text-right">Threshold</Label>
+                <Input id="threshold" type="number" {...register("thresholdQuantity")} className="col-span-3" />
+                {errors.thresholdQuantity && <p className="col-span-4 text-right text-sm text-destructive">{errors.thresholdQuantity.message}</p>}
+            </div>
+
+
+            {/* Conditional Fields */}
             {productType === "bottle" ? (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="stock" className="text-right">Stock (Units)</Label>
-                <Input id="stock" type="number" {...register("inventory.quantityUnits")} className="col-span-3" />
-              </div>
-            ) : (
               <>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="current-ml" className="text-right">Current (ml)</Label>
+                  <Label htmlFor="stock" className="text-right">Stock (Units)</Label>
+                  <Input id="stock" type="number" {...register("inventory.quantityUnits")} className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="buy-price" className="text-right">Buy Price (Ksh)</Label>
+                    <Input id="buy-price" type="number" {...register("buyPrice")} className="col-span-3" />
+                    {errors.buyPrice && <p className="col-span-4 text-right text-sm text-destructive">{errors.buyPrice.message}</p>}
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="sell-price" className="text-right">Sell Price (Ksh)</Label>
+                    <Input id="sell-price" type="number" {...register("sellPrice")} className="col-span-3" />
+                    {errors.sellPrice && <p className="col-span-4 text-right text-sm text-destructive">{errors.sellPrice.message}</p>}
+                </div>
+              </>
+            ) : ( // Drum Type Fields
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="current-ml" className="text-right">Current Stock (ml)</Label>
                     <Input id="current-ml" type="number" {...register("inventory.currentML")} className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="capacity-ml" className="text-right">Capacity (ml)</Label>
                     <Input id="capacity-ml" type="number" {...register("inventory.capacityML")} className="col-span-3" />
                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="buy-price-ml" className="text-right">Buy Price (per ml)</Label>
+                    <Input id="buy-price-ml" type="number" step="0.01" {...register("buyPrice")} className="col-span-3" />
+                    {errors.buyPrice && <p className="col-span-4 text-right text-sm text-destructive">{errors.buyPrice.message}</p>}
+                </div>
+                
+                <Separator className="col-span-4 my-2"/>
+
+                <div className="col-span-4">
+                    <h4 className="font-medium text-lg">Pour Variants</h4>
+                    <p className="text-sm text-muted-foreground">Define the different sizes this drum product can be sold in.</p>
+                </div>
+
+                <div className="col-span-4 space-y-4">
+                   {fields.map((field, index) => (
+                    <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start p-3 border rounded-md">
+                        <div className="col-span-12 sm:col-span-4">
+                            <Label>Name</Label>
+                            <Input {...register(`pourVariants.${index}.name`)} placeholder="e.g. Single Shot" />
+                        </div>
+                        <div className="col-span-6 sm:col-span-3">
+                            <Label>Size (ml)</Label>
+                            <Input type="number" {...register(`pourVariants.${index}.pourSizeML`)} placeholder="e.g. 30" />
+                        </div>
+                        <div className="col-span-6 sm:col-span-3">
+                            <Label>Price (Ksh)</Label>
+                            <Input type="number" {...register(`pourVariants.${index}.sellPrice`)} placeholder="e.g. 150" />
+                        </div>
+                        <div className="col-span-12 sm:col-span-2 flex items-end justify-end">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
+                    </div>
+                    ))}
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full" 
+                        onClick={() => append({id: fields.length + 1, name: '', pourSizeML: 0, sellPrice: 0 })}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Pour Variant
+                    </Button>
+                </div>
               </>
             )}
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="buy-price" className="text-right">Buy Price (Ksh)</Label>
-              <Input id="buy-price" type="number" {...register("buyPrice")} className="col-span-3" />
-              {errors.buyPrice && <p className="col-span-4 text-right text-sm text-destructive">{errors.buyPrice.message}</p>}
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="sell-price" className="text-right">Sell Price (Ksh)</Label>
-              <Input id="sell-price" type="number" {...register("sellPrice")} className="col-span-3" />
-              {errors.sellPrice && <p className="col-span-4 text-right text-sm text-destructive">{errors.sellPrice.message}</p>}
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="threshold" className="text-right">Threshold</Label>
-              <Input id="threshold" type="number" {...register("thresholdQuantity")} className="col-span-3" />
-              {errors.thresholdQuantity && <p className="col-span-4 text-right text-sm text-destructive">{errors.thresholdQuantity.message}</p>}
-            </div>
           </div>
           <SheetFooter>
             <SheetClose asChild>

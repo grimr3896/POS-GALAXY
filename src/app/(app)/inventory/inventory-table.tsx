@@ -59,9 +59,21 @@ export function InventoryTable({
     }
     return <Badge variant="outline">N/A</Badge>;
   };
+  
+  const getSellPriceDisplay = (product: Product) => {
+    if (product.type === 'bottle') {
+        return product.sellPrice > 0 ? `Ksh ${product.sellPrice.toLocaleString()}`: 'N/A';
+    }
+    if (product.type === 'drum' && product.pourVariants && product.pourVariants.length > 0) {
+        const prices = product.pourVariants.map(v => v.sellPrice);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        if (min === max) return `Ksh ${min.toLocaleString()}`;
+        return `Ksh ${min.toLocaleString()} - ${max.toLocaleString()}`;
+    }
+    return 'N/A';
+  }
 
-  // Filter out 'pour' type products from the main inventory view
-  const displayableProducts = data.filter(p => p.type !== 'pour');
 
   return (
     <Card>
@@ -101,7 +113,7 @@ export function InventoryTable({
                     <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                   </TableRow>
                 ))
-              : displayableProducts.map((product) => (
+              : data.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell className="hidden sm:table-cell">
                       <Image
@@ -118,7 +130,7 @@ export function InventoryTable({
                       {product.type}
                     </TableCell>
                     <TableCell>{renderStock(product)}</TableCell>
-                    <TableCell>{product.sellPrice > 0 ? `Ksh ${product.sellPrice.toLocaleString()}`: 'N/A'}</TableCell>
+                    <TableCell>{getSellPriceDisplay(product)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { getTransactions, getUsers, reverseTransaction, getProducts } from "@/lib/api";
-import type { Transaction, User } from "@/lib/types";
+import { getTransactions, getUsers, reverseTransaction } from "@/lib/api";
+import type { Transaction, User, OrderItem } from "@/lib/types";
 import { SalesHistoryTable } from "./sales-history-table";
 import { SalesHistoryFilters, type DateRange } from "./sales-history-filters";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -83,7 +83,7 @@ export default function SalesHistoryPage() {
     const password = prompt("To reverse this sale, please enter the admin password:");
     if (password === "626-jarvis") {
         try {
-            const newOrderItems = reverseTransaction(transaction.id);
+            const newOrderItems: OrderItem[] = reverseTransaction(transaction.id);
             setPendingOrder(newOrderItems);
             fetchData();
             handleCloseModal();

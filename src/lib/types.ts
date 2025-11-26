@@ -7,19 +7,26 @@ export type User = {
   companyCardId: string;
 };
 
+export type ProductPourVariant = {
+  id: number;
+  name: string; // e.g., "250ml Pour"
+  pourSizeML: number;
+  sellPrice: number;
+};
+
 export type Product = {
   id: number;
   sku: string;
   name: string;
   image: string;
-  type: "bottle" | "drum" | "pour"; // Added "pour" type for variants
+  type: "bottle" | "drum";
   unit: "ml" | "L" | "bottle";
-  buyPrice: number;
-  sellPrice: number;
-  thresholdQuantity: number;
-  parentProductId?: number; // Link pour variants to parent drum
-  pourSizeML?: number; // Size of the pour in ml
+  buyPrice: number; // For drums, this is cost per liter
+  sellPrice: number; // For bottles
+  thresholdQuantity: number; // In units for bottles, in ml for drums
+  pourVariants?: ProductPourVariant[];
 };
+
 
 export type InventoryItem = {
   id: number;
@@ -41,6 +48,7 @@ export type TransactionItem = {
   buyPrice: number; // buy price per unit (bottle or pour variant)
   lineTotal: number;
   lineCost: number;
+  pourSizeML?: number;
 };
 
 export type Transaction = {
@@ -74,6 +82,7 @@ export type OrderItem = {
   buyPrice: number;
   totalPrice: number;
   type: "bottle" | "pour"; // Order items are either bottles or specific pours
+  pourSizeML?: number;
 };
 
 export type Expense = {
