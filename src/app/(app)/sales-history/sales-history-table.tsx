@@ -37,7 +37,7 @@ const formatCurrency = (amount: number | undefined | null) => {
 }
 
 const formatItems = (items: TransactionItem[]) => {
-    if (!items || items.length === 0) return '';
+    if (!items || items.length === 0) return { full: '', truncated: ''};
     
     const grouped = items.reduce((acc, item) => {
       const name = item.productName.replace(' (Pour)', '').trim();
@@ -51,17 +51,25 @@ const formatItems = (items: TransactionItem[]) => {
       return acc;
     }, {} as Record<string, { quantity: number; isPour: boolean }>);
 
-    return Object.entries(grouped)
+    const formattedItems = Object.entries(grouped)
       .map(([name, { quantity, isPour }]) => {
         if (isPour) {
           if (quantity >= 1000) {
-            return `${name}: ${(quantity / 1000).toFixed(2)}L`;
+             const liters = quantity / 1000;
+             const formattedLiters = Number.isInteger(liters) ? liters : liters.toFixed(2);
+            return `${name}: ${formattedLiters}L`;
           }
           return `${name}: ${quantity}ml`;
         }
         return `${name}: ${quantity} Bottle${quantity > 1 ? 's' : ''}`;
-      })
-      .join('; ');
+      });
+
+    const full = formattedItems.join('; ');
+    const truncated = formattedItems.length > 2 
+        ? `${formattedItems.slice(0, 2).join(', ')}, ...`
+        : formattedItems.join(', ');
+
+    return { full, truncated };
 };
 
 
@@ -99,8 +107,8 @@ export function SalesHistoryTable({ transactions, users, isLoading, onViewTransa
                     <TableCell className="font-medium">{t.id}</TableCell>
                     <TableCell>{getUserName(t.userId)}</TableCell>
                     <TableCell>
-                        <span className="truncate" title={formatItems(t.items)}>
-                            {formatItems(t.items)}
+                        <span className="truncate" title={formatItems(t.items).full}>
+                            {formatItems(t.items).truncated}
                         </span>
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(t.totalAmount)}</TableCell>
