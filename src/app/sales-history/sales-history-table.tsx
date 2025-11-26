@@ -43,48 +43,28 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
 
   const getItemsSummary = (items: TransactionItem[]) => {
     if (!items || items.length === 0) return '—';
-    
-    const itemMap = new Map<string, { quantity: number; productName: string }>();
 
-    items.forEach(item => {
-        const isPour = item.productName.includes('(Pour)');
-        const productName = item.productName.replace(' (Pour)', '').trim();
-        let key = productName;
-        
-        if (!isPour) {
-            // For non-pour items, use a unique key to count them separately
-            key = `${productName}-${item.id}`;
+    const grouped = items.reduce((acc, item) => {
+      const isPour = item.productName.includes('(Pour)');
+      const name = isPour ? item.productName : item.productName;
+      
+      if (!acc[name]) {
+        acc[name] = { quantity: 0, isPour: isPour };
+      }
+      acc[name].quantity += item.quantity;
+      
+      return acc;
+    }, {} as Record<string, { quantity: number, isPour: boolean }>);
+
+    return Object.entries(grouped)
+      .map(([name, { quantity, isPour }]) => {
+        if (isPour) {
+          return `${name.replace(' (Pour)', '')} (${quantity}ml)`;
         }
-
-        const existing = itemMap.get(key);
-        if (existing) {
-            existing.quantity += item.quantity;
-        } else {
-            itemMap.set(key, { quantity: item.quantity, productName: item.productName });
-        }
-    });
-
-    // Post-process to group non-pour items by name
-     const finalItemMap = new Map<string, { quantity: number; productName: string; isPour: boolean }>();
-     for (const item of itemMap.values()) {
-        const isPour = item.productName.includes('(Pour)');
-        const productName = item.productName.replace(' (Pour)', '').trim();
-        const finalKey = isPour ? productName : item.productName;
-        const existing = finalItemMap.get(finalKey);
-        if(existing) {
-            existing.quantity += item.quantity;
-        } else {
-            finalItemMap.set(finalKey, { quantity: item.quantity, productName: item.productName, isPour });
-        }
-     }
-
-
-    return Array.from(finalItemMap.values()).map(item => {
-        const name = item.productName.replace(' (Pour)', '');
-        const quantity = item.isPour ? `${item.quantity}ml` : `×${item.quantity}`;
-        return `${name} ${quantity}`;
-    }).join(', ');
-  }
+        return `${quantity}x ${name}`;
+      })
+      .join(', ');
+  };
 
 
   return (
@@ -115,7 +95,7 @@ export function SalesHistoryTable({ transactions, users, isLoading }: SalesHisto
                     <TableCell className="font-medium">{t.id}</TableCell>
                     <TableCell>{getUserName(t.userId)}</TableCell>
                     <TableCell>
-                        <span title={getItemsSummary(t.items)}>
+                        <span className="truncate" title={getItemsSummary(t.items)}>
                             {getItemsSummary(t.items)}
                         </span>
                     </TableCell>
