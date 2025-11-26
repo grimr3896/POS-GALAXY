@@ -274,6 +274,7 @@ export const getDashboardData = () => {
     const transactions = getTransactions();
     const products = getProductsWithInventory();
     const suspendedOrders = getSuspendedOrders();
+    const allProducts = getProducts();
 
     const today = new Date().toISOString().split('T')[0];
     const todaysTransactions = transactions.filter(t => t.timestamp.startsWith(today));
@@ -282,17 +283,27 @@ export const getDashboardData = () => {
     const todaysProfit = todaysTransactions.reduce((acc, t) => acc + (t.profit || 0), 0);
 
     const salesByProduct = todaysTransactions.flatMap(t => t.items).reduce((acc, item) => {
-        acc[item.productId] = (acc[item.productId] || 0) + item.lineTotal;
+        const productName = item.productName.replace(' (Pour)', '').trim();
+        acc[productName] = (acc[productName] || 0) + item.lineTotal;
         return acc;
-    }, {} as Record<number, number>);
+    }, {} as Record<string, number>);
 
     const topSellers = Object.entries(salesByProduct)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 5)
-        .map(([productId, total]) => {
-            const product = getProducts().find(p => p.id === Number(productId));
-            return { name: product?.name || 'Unknown', total };
-        });
+        .map(([name, total]) => ({ name, total }));
+        
+    const profitByProduct = todaysTransactions.flatMap(t => t.items).reduce((acc, item) => {
+        const profit = item.lineTotal - item.lineCost;
+        const productName = item.productName.replace(' (Pour)', '').trim();
+        acc[productName] = (acc[productName] || 0) + profit;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const topProfitMakers = Object.entries(profitByProduct)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([name, total]) => ({ name, total }));
 
     const stockAlerts = products.filter(p => {
         if (p.inventory) {
@@ -312,6 +323,7 @@ export const getDashboardData = () => {
         totalTransactions: todaysTransactions.length,
         suspendedOrders: suspendedOrders.length,
         topSellers,
+        topProfitMakers,
         stockAlerts
     };
 }

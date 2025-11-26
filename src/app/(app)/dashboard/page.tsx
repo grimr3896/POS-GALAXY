@@ -7,6 +7,7 @@ import type { Product, InventoryItem } from "@/lib/types";
 import { KPICard } from "./kpi-card";
 import { TopSellersChart } from "./top-sellers-chart";
 import { StockAlertsTable } from "./stock-alerts-table";
+import { TopProfitMakersChart } from "./top-profit-makers-chart";
 
 type DashboardData = {
   todaysSales: number;
@@ -14,6 +15,7 @@ type DashboardData = {
   totalTransactions: number;
   suspendedOrders: number;
   topSellers: { name: string; total: number }[];
+  topProfitMakers: { name: string; total: number }[];
   stockAlerts: (Product & { inventory?: InventoryItem })[];
 };
 
@@ -65,6 +67,9 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <TopSellersChart data={data?.topSellers} isLoading={loading} />
+        <TopProfitMakersChart data={data?.topProfitMakers} isLoading={loading} />
+      </div>
+       <div className="grid gap-6">
         <StockAlertsTable data={data?.stockAlerts} isLoading={loading} />
       </div>
     </div>
