@@ -82,6 +82,43 @@ Galaxy Inn POS System
       window.location.href = link;
     }
   };
+  
+  const handleDownloadReport = () => {
+    if (!reportData) return;
+
+    const allUsers = getUsers();
+    const getUserName = (userId: number) => allUsers.find(u => u.id === userId)?.name || "Unknown";
+
+    const headers = ["Transaction ID", "Date", "Time", "Employee", "Items", "Total Amount", "Total Cost", "Profit", "Tax", "Payment Method", "Status"];
+    
+    const csvContent = [
+      headers.join(","),
+      ...reportData.map(t => [
+        t.id,
+        new Date(t.timestamp).toLocaleDateString(),
+        new Date(t.timestamp).toLocaleTimeString(),
+        getUserName(t.userId),
+        `"${t.items.map(i => `${i.quantity}x ${i.productName}`).join("; ")}"`,
+        t.totalAmount,
+        t.totalCost,
+        t.profit,
+        t.tax,
+        t.paymentMethod,
+        t.status,
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    const fromDate = filters.dateRange.from?.toISOString().split('T')[0];
+    const toDate = filters.dateRange.to?.toISOString().split('T')[0];
+    link.setAttribute("download", `report_${fromDate}_to_${toDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
 
   return (
@@ -97,6 +134,7 @@ Galaxy Inn POS System
             </div>
             <div className="mt-4 flex gap-2 md:mt-0">
                 <Button onClick={handleGenerateReport} disabled={loading}>Generate Report</Button>
+                <Button variant="outline" onClick={handleDownloadReport} disabled={!reportData}>Download CSV</Button>
                 <Button variant="outline" onClick={handleSendEmail} disabled={!reportData}>Send via Email</Button>
             </div>
           </div>
