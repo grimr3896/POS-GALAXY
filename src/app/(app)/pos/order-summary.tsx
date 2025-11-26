@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -107,7 +108,7 @@ export function OrderSummary({
           ) : (
             <div className="flex flex-col gap-4">
               {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-4">
+                <div key={item.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
                   <Image
                     src={item.image}
                     alt={item.name}
@@ -116,29 +117,31 @@ export function OrderSummary({
                     className="rounded-md"
                     data-ai-hint="product image"
                   />
-                  <div className="flex-1">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.type === 'bottle' ? `${item.quantity} x Ksh ${item.unitPrice}` : `${item.quantity}ml @ Ksh ${item.unitPrice.toFixed(2)}/ml`}
-                    </p>
-                  </div>
-                  {item.type === 'bottle' ? (
-                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}>
-                            <Minus className="h-3 w-3" />
-                        </Button>
-                        <Input value={item.quantity} onChange={e => onUpdateQuantity(item.id, parseInt(e.target.value) || 1)} className="h-7 w-12 text-center" />
-                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}>
-                            <Plus className="h-3 w-3" />
-                        </Button>
+                  <div className="grid gap-1">
+                    <p className="font-medium leading-tight truncate">{item.name}</p>
+                    <div className="flex items-center gap-2">
+                       {item.type === 'bottle' ? (
+                          <div className="flex items-center gap-1.5">
+                              <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}>
+                                  <Minus className="h-3 w-3" />
+                              </Button>
+                              <Input value={item.quantity} onChange={e => onUpdateQuantity(item.id, parseInt(e.target.value) || 1)} className="h-6 w-10 text-center px-1" />
+                              <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}>
+                                  <Plus className="h-3 w-3" />
+                              </Button>
+                          </div>
+                        ) : <p className="text-sm text-muted-foreground">{item.quantity}ml</p> }
                     </div>
-                  ) : <div className="w-[102px]"></div> }
-                  <p className="w-20 text-right font-semibold">
-                    Ksh {item.totalPrice.toLocaleString()}
-                  </p>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => onRemoveItem(item.id)}>
-                    <X className="h-4 w-4" />
-                  </Button>
+                  </div>
+
+                  <div className="grid gap-1 text-right">
+                    <p className="font-semibold">
+                      Ksh {item.totalPrice.toLocaleString()}
+                    </p>
+                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-6 w-6 ml-auto" onClick={() => onRemoveItem(item.id)}>
+                        <X className="h-4 w-4" />
+                     </Button>
+                  </div>
                 </div>
               ))}
             </div>
