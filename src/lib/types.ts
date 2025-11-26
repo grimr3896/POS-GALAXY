@@ -1,6 +1,8 @@
 export type User = {
   id: number;
   name: string;
+  email?: string;
+  phone?: string;
   role: "Admin" | "Cashier" | "Manager" | "Waiter" | "Cleaner" | "Security";
   companyCardId: string;
 };

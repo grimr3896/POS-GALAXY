@@ -5,8 +5,8 @@ import { PlaceHolderImages } from "./placeholder-images";
 
 // --- Seed Data ---
 const seedUsers: User[] = [
-  { id: 1, name: "Admin User", role: "Admin", companyCardId: "1001" },
-  { id: 2, name: "Cashier One", role: "Cashier", companyCardId: "1002" },
+  { id: 1, name: "Admin User", email: "admin@galaxyinn.com", phone: "0712345678", role: "Admin", companyCardId: "1001" },
+  { id: 2, name: "Cashier One", email: "cashier1@galaxyinn.com", phone: "0787654321", role: "Cashier", companyCardId: "1002" },
 ];
 
 const seedProducts: Product[] = [

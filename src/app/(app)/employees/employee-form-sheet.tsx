@@ -28,6 +28,8 @@ import { useEffect } from "react";
 const formSchema = z.object({
   id: z.number().optional(),
   name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.string().email("Invalid email address.").optional().or(z.literal('')),
+  phone: z.string().optional(),
   role: z.enum(["Admin", "Cashier", "Manager", "Waiter", "Cleaner", "Security"]),
   companyCardId: z.string().min(4, "Card ID must be at least 4 characters."),
 });
@@ -62,6 +64,8 @@ export function EmployeeFormSheet({ isOpen, onOpenChange, onSubmit, employee }: 
       reset({
         id: undefined,
         name: "",
+        email: "",
+        phone: "",
         role: "Cashier",
         companyCardId: "",
       });
@@ -86,6 +90,16 @@ export function EmployeeFormSheet({ isOpen, onOpenChange, onSubmit, employee }: 
               <Label htmlFor="name" className="text-right">Name</Label>
               <Input id="name" {...register("name")} className="col-span-3" />
               {errors.name && <p className="col-span-4 text-right text-sm text-destructive">{errors.name.message}</p>}
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">Email</Label>
+              <Input id="email" {...register("email")} className="col-span-3" />
+              {errors.email && <p className="col-span-4 text-right text-sm text-destructive">{errors.email.message}</p>}
+            </div>
+             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">Phone</Label>
+              <Input id="phone" {...register("phone")} className="col-span-3" />
+              {errors.phone && <p className="col-span-4 text-right text-sm text-destructive">{errors.phone.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="companyCardId" className="text-right">Card ID</Label>

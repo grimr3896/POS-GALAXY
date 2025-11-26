@@ -62,6 +62,7 @@ export function EmployeeTable({
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Contact</TableHead>
               <TableHead>Card ID</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -82,6 +83,7 @@ export function EmployeeTable({
                       </div>
                     </TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-28" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                   </TableRow>
@@ -99,6 +101,12 @@ export function EmployeeTable({
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{employee.role}</Badge>
+                    </TableCell>
+                     <TableCell>
+                      <div className="text-sm text-muted-foreground">
+                        {employee.email && <div>{employee.email}</div>}
+                        {employee.phone && <div>{employee.phone}</div>}
+                      </div>
                     </TableCell>
                     <TableCell>{employee.companyCardId}</TableCell>
                     <TableCell>
