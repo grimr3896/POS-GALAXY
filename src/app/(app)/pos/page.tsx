@@ -15,6 +15,11 @@ export default function POSPage() {
   const [state, dispatch] = useReducer(posReducer, { orderItems: [] });
   const [suspendedOrders, setSuspendedOrders] = useState<SuspendedOrder[]>([]);
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const fetchProducts = useCallback(() => {
     // We only need to fetch products with inventory for display purposes
@@ -26,9 +31,11 @@ export default function POSPage() {
   }, []);
 
   useEffect(() => {
-    fetchProducts();
-    fetchSuspendedOrders();
-  }, [fetchProducts, fetchSuspendedOrders]);
+    if (isClient) {
+      fetchProducts();
+      fetchSuspendedOrders();
+    }
+  }, [fetchProducts, fetchSuspendedOrders, isClient]);
   
   useEffect(() => {
     if (!authLoading && pendingOrder) {
@@ -108,6 +115,10 @@ export default function POSPage() {
 
   const drumProducts = products.filter(p => p.type === 'drum');
   const bottleProducts = products.filter(p => p.type === 'bottle');
+
+  if (!isClient) {
+    return null; // or a loading skeleton
+  }
 
   return (
     <div className="grid h-[calc(100vh-theme(spacing.28))] flex-1 grid-cols-1 gap-6 lg:grid-cols-3">
