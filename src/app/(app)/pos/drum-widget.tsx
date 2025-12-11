@@ -66,7 +66,7 @@ export function DrumWidget({ drumProduct, onAddItem }: DrumWidgetProps) {
                                 isDisabled && "cursor-not-allowed bg-muted/50 text-muted-foreground opacity-50"
                             )}
                         >
-                            <CardContent className="p-3 text-center flex flex-col items-center justify-center">
+                            <CardContent className="p-3 text-center flex flex-col items-center justify-center h-full">
                                 <p className="font-bold text-base">{variant.name}</p>
                                 <p className="text-xs text-muted-foreground">({variant.pourSizeML}ml)</p>
                                 <p className="text-sm mt-1">Ksh {variant.sellPrice}</p>
