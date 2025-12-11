@@ -63,6 +63,11 @@ interface ProductFormSheetProps {
   product: ProductWithInventory | null;
 }
 
+const formatPourName = (ml: number) => {
+    if (ml >= 1000) return `${ml / 1000} L`;
+    return `${ml} ml`;
+}
+
 export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: ProductFormSheetProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const {
@@ -236,12 +241,8 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
 
                 <div className="col-span-4 space-y-4">
                    {fields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start p-3 border rounded-md">
-                        <div className="col-span-12 sm:col-span-4 space-y-1">
-                            <Label>Display Name</Label>
-                            <Input {...register(`pourVariants.${index}.name`)} placeholder="e.g. 1/4 L" />
-                        </div>
-                        <div className="col-span-6 sm:col-span-3 space-y-1">
+                    <div key={field.id} className="grid grid-cols-10 gap-x-3 gap-y-4 items-start p-3 border rounded-md">
+                        <div className="col-span-5 space-y-1">
                             <Label>Size (L)</Label>
                              <Controller
                                 name={`pourVariants.${index}.pourSizeML`}
@@ -253,7 +254,9 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                                         value={value > 0 ? value / 1000 : ""}
                                         onChange={(e) => {
                                             const valInLiters = parseFloat(e.target.value);
-                                            onChange(isNaN(valInLiters) ? 0 : valInLiters * 1000);
+                                            const valInMl = isNaN(valInLiters) ? 0 : valInLiters * 1000;
+                                            onChange(valInMl);
+                                            setValue(`pourVariants.${index}.name`, formatPourName(valInMl));
                                         }}
                                         {...restField}
                                         placeholder="e.g. 0.25"
@@ -261,11 +264,11 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                                 )}
                             />
                         </div>
-                        <div className="col-span-6 sm:col-span-3 space-y-1">
+                        <div className="col-span-4 space-y-1">
                             <Label>Price (Ksh)</Label>
                             <Input type="number" {...register(`pourVariants.${index}.sellPrice`)} placeholder="e.g. 150" />
                         </div>
-                        <div className="col-span-12 sm:col-span-2 flex items-end justify-end">
+                        <div className="col-span-1 flex items-end justify-end">
                             <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -276,7 +279,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                         type="button" 
                         variant="outline" 
                         className="w-full" 
-                        onClick={() => append({id: fields.length + 1, name: '', pourSizeML: 0, sellPrice: 0 })}>
+                        onClick={() => append({id: fields.length + 1, name: 'New Pour', pourSizeML: 0, sellPrice: 0 })}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add Pour Variant
                     </Button>
