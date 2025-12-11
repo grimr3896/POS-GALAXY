@@ -26,9 +26,9 @@ const seedProducts: Product[] = [
     image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', 
     type: "drum", 
     unit: "L", 
-    buyPrice: 20, // Price per ML
+    buyPrice: 0.4, // Price per ML (e.g. 20,000 KSH for 50L drum = 0.4 KSH/ml)
     sellPrice: 0, 
-    thresholdQuantity: 5000,
+    thresholdQuantity: 5000, // 5L
     pourVariants: [
         { id: 1, name: "1/4 L", pourSizeML: 250, sellPrice: 250 },
         { id: 2, name: "1/2 L", pourSizeML: 500, sellPrice: 450 },
@@ -42,9 +42,9 @@ const seedProducts: Product[] = [
     image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', 
     type: "drum", 
     unit: "L", 
-    buyPrice: 18, // Price per ML
+    buyPrice: 0.3, // Price per ML (e.g. 4,500 KSH for 15L drum = 0.3 KSH/ml)
     sellPrice: 0, 
-    thresholdQuantity: 5000,
+    thresholdQuantity: 3000, // 3L
     pourVariants: [
         { id: 1, name: "1/4 L", pourSizeML: 250, sellPrice: 220 },
         { id: 2, name: "1/2 L", pourSizeML: 500, sellPrice: 400 },
@@ -222,6 +222,17 @@ export const deleteProduct = (productId: number) => {
 
 // Transactions
 export const getTransactions = (): Transaction[] => getFromStorage("transactions", []);
+
+const calculateLineCost = (item: OrderItem | TransactionItem): number => {
+    if (item.type === 'pour' && item.pourSizeML) {
+        // buyPrice is per-ml for drums.
+        return item.buyPrice * item.pourSizeML * item.quantity;
+    }
+    // For bottles, buyPrice is per-bottle.
+    return item.buyPrice * item.quantity;
+};
+
+
 export const saveTransaction = (
     userId: number, 
     items: (OrderItem | TransactionItem)[], 
@@ -231,8 +242,24 @@ export const saveTransaction = (
     const transactions = getTransactions();
     const inventory = getInventory();
     
-    const totalAmount = items.reduce((acc, item) => acc + (item.lineTotal || (item.quantity * item.unitPrice)), 0);
-    const totalCost = items.reduce((acc, item) => acc + (item.buyPrice * item.quantity), 0);
+    const transactionItems: TransactionItem[] = items.map((item, index) => {
+        const lineTotal = item.lineTotal || (item.quantity * item.unitPrice);
+        const lineCost = calculateLineCost(item);
+        return {
+            id: parseInt(`${Date.now()}${index}`),
+            productId: item.productId,
+            productName: item.name || ('productName' in item ? item.productName : 'Unknown'),
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            buyPrice: item.buyPrice,
+            lineTotal: lineTotal,
+            lineCost: lineCost,
+            pourSizeML: item.pourSizeML,
+        }
+    });
+    
+    const totalAmount = transactionItems.reduce((acc, item) => acc + item.lineTotal, 0);
+    const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -240,17 +267,7 @@ export const saveTransaction = (
         id: `TXN-${Date.now()}`,
         timestamp: transactionTimestamp,
         userId,
-        items: items.map((item, index) => ({
-            id: parseInt(`${Date.now()}${index}`), // more unique id
-            productId: item.productId,
-            productName: item.name || ('productName' in item ? item.productName : 'Unknown'),
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            buyPrice: item.buyPrice,
-            lineTotal: item.lineTotal || (item.quantity * item.unitPrice),
-            lineCost: item.buyPrice * item.quantity,
-            pourSizeML: item.pourSizeML,
-        })),
+        items: transactionItems,
         totalAmount,
         totalCost,
         profit: totalAmount - totalCost,
@@ -358,7 +375,7 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
                 image: product.image,
                 quantity: item.quantity,
                 unitPrice: variant?.sellPrice || 0,
-                buyPrice: product.buyPrice * item.pourSizeML,
+                buyPrice: product.buyPrice, // This is now per-ml
                 totalPrice: item.lineTotal,
                 type: 'pour',
                 pourSizeML: item.pourSizeML,
