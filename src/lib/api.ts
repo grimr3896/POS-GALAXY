@@ -441,10 +441,10 @@ export const getDashboardData = () => {
 
         t.items.forEach(item => {
             const productName = item.productName;
-            const profit = item.lineTotal - item.lineCost;
+            const itemProfit = item.lineTotal - item.lineCost;
             
             acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
-            acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + profit;
+            acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;
         });
 
         return acc;
