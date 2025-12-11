@@ -2,7 +2,6 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import type { Product, InventoryItem, OrderItem, ProductPourVariant } from "@/lib/types";
 import { createOrderItem } from "./pos-helpers";
 import { cn } from "@/lib/utils";
@@ -55,7 +54,7 @@ export function DrumWidget({ drumProduct, onAddItem }: DrumWidgetProps) {
         
         {/* Pour Variant Buttons */}
         <div className="flex-1 w-full">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {pourVariants?.map(variant => {
                     const isDisabled = currentLevel < variant.pourSizeML;
                     return (
