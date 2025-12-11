@@ -242,7 +242,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                             <Input {...register(`pourVariants.${index}.name`)} placeholder="e.g. 1/4 L" />
                         </div>
                         <div className="col-span-6 sm:col-span-3">
-                            <Label>Size (ml)</Label>
+                            <Label>Size (L)</Label>
                             <Input type="number" {...register(`pourVariants.${index}.pourSizeML`)} placeholder="e.g. 250" />
                         </div>
                         <div className="col-span-6 sm:col-span-3">
