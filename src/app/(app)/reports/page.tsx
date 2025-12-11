@@ -1,12 +1,15 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ReportFilters, type ReportFiltersState } from "./report-filters";
-import { getUsers, getTransactions, getProducts } from "@/lib/api";
+import { getUsers, getTransactions, getProducts, saveTransaction } from "@/lib/api";
 import type { User, Transaction, Product, TransactionItem } from "@/lib/types";
 import { GeneratedReport } from "./generated-report";
+import { useToast } from "@/hooks/use-toast";
+import { HistoricalTransactionForm } from "./historical-transaction-form";
 
 export default function ReportsPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -14,6 +17,8 @@ export default function ReportsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState<Transaction[] | null>(null);
+  const { toast } = useToast();
+  const [isHistoricalFormOpen, setIsHistoricalFormOpen] = useState(false);
 
   const [filters, setFilters] = useState<ReportFiltersState>({
     reportType: "daily",
@@ -22,13 +27,17 @@ export default function ReportsPage() {
     category: "all",
   });
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     setLoading(true);
     setUsers(getUsers());
     setTransactions(getTransactions());
     setProducts(getProducts());
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleGenerateReport = useCallback(() => {
     let filtered = transactions;
@@ -66,6 +75,32 @@ export default function ReportsPage() {
 
     setReportData(filtered);
   }, [filters, transactions, products]);
+
+  const handleHistoricalSubmit = (data: {
+    transactionDate: Date;
+    employeeId: number;
+    items: TransactionItem[];
+    paymentMethod: "Cash" | "Card";
+  }) => {
+    try {
+      saveTransaction(data.employeeId, data.items, data.paymentMethod, {
+        transactionDate: data.transactionDate,
+        isBackdated: true,
+      });
+      fetchData(); // Refetch all data to include the new transaction
+      setIsHistoricalFormOpen(false);
+      toast({
+        title: "Historical Transaction Added",
+        description: "The past transaction has been saved for reporting.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to save",
+        description: error.message || "Could not save the historical transaction.",
+      });
+    }
+  };
   
   const createMailtoLink = (report: Transaction[]) => {
     if(!report) return "";
@@ -110,7 +145,7 @@ Galaxy Inn POS System
       const name = item.productName;
       
       if (!acc[name]) {
-        acc[name] = { quantity: 0, type: product?.type, pourSizeML: product?.pourSizeML };
+        acc[name] = { quantity: 0, type: product?.type, pourSizeML: product?.pourVariants && product.pourVariants.length > 0 && product.pourVariants[0].pourSizeML };
       }
       acc[name].quantity += item.quantity;
       
@@ -133,7 +168,7 @@ Galaxy Inn POS System
     const allUsers = getUsers();
     const getUserName = (userId: number) => allUsers.find(u => u.id === userId)?.name || "Unknown";
   
-    const headers = ["Transaction ID", "Date", "Time", "Employee", "Items", "Total Amount", "Total Cost", "Profit", "Tax", "Payment Method", "Status"];
+    const headers = ["Transaction ID", "Date", "Time", "Employee", "Items", "Total Amount", "Total Cost", "Profit", "Tax", "Payment Method", "Status", "Is Backdated"];
   
     const escapeCsvField = (field: any) => {
       if (field === null || field === undefined) {
@@ -162,6 +197,7 @@ Galaxy Inn POS System
         escapeCsvField(t.tax),
         escapeCsvField(t.paymentMethod),
         escapeCsvField(t.status),
+        escapeCsvField(t.isBackdated ? 'Yes' : 'No')
       ].join(","))
     ].join("\n");
   
@@ -179,43 +215,53 @@ Galaxy Inn POS System
 
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>Reports</CardTitle>
-              <CardDescription>
-                Generate and view sales, inventory, and performance reports.
-              </CardDescription>
+    <>
+      <div className="flex flex-col gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle>Reports</CardTitle>
+                <CardDescription>
+                  Generate and view sales, inventory, and performance reports.
+                </CardDescription>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 md:mt-0">
+                  <Button onClick={() => setIsHistoricalFormOpen(true)}>Add Past Transaction</Button>
+                  <Button onClick={handleGenerateReport} disabled={loading}>Generate Report</Button>
+                  <Button variant="outline" onClick={handleDownloadReport} disabled={!reportData}>Download CSV</Button>
+                  <Button variant="outline" onClick={handleSendEmail} disabled={!reportData}>Send via Email</Button>
+              </div>
             </div>
-            <div className="mt-4 flex gap-2 md:mt-0">
-                <Button onClick={handleGenerateReport} disabled={loading}>Generate Report</Button>
-                <Button variant="outline" onClick={handleDownloadReport} disabled={!reportData}>Download CSV</Button>
-                <Button variant="outline" onClick={handleSendEmail} disabled={!reportData}>Send via Email</Button>
+          </CardHeader>
+          <CardContent>
+            <ReportFilters 
+              filters={filters}
+              onFiltersChange={setFilters}
+              employees={users}
+              disabled={loading}
+            />
+            <div className="mt-6">
+              {reportData ? (
+                  <GeneratedReport data={reportData} users={users} />
+              ) : (
+                  <div className="rounded-lg border border-dashed border-border p-8 text-center">
+                      <p className="text-muted-foreground">
+                      Select your filters and click "Generate Report" to view data.
+                      </p>
+                  </div>
+              )}
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ReportFilters 
-            filters={filters}
-            onFiltersChange={setFilters}
-            employees={users}
-            disabled={loading}
-          />
-          <div className="mt-6">
-            {reportData ? (
-                <GeneratedReport data={reportData} users={users} />
-            ) : (
-                <div className="rounded-lg border border-dashed border-border p-8 text-center">
-                    <p className="text-muted-foreground">
-                    Select your filters and click "Generate Report" to view data.
-                    </p>
-                </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+      <HistoricalTransactionForm
+        isOpen={isHistoricalFormOpen}
+        onOpenChange={setIsHistoricalFormOpen}
+        onSubmit={handleHistoricalSubmit}
+        employees={users}
+        products={products}
+      />
+    </>
   );
 }

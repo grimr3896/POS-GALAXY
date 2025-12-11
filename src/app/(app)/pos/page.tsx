@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useReducer, useEffect, useCallback } from "react";
@@ -56,12 +57,15 @@ export default function POSPage() {
     dispatch({ type: "REMOVE_ITEM", itemId });
   }, []);
 
-  const handleCheckout = useCallback((paymentMethod: 'Cash' | 'Card') => {
+  const handleCheckout = useCallback((paymentMethod: 'Cash' | 'Card', transactionDate?: Date) => {
     if (!user || state.orderItems.length === 0) return false;
     try {
-      saveTransaction(user.id, state.orderItems, paymentMethod);
+      const isBackdated = transactionDate && transactionDate.toDateString() !== new Date().toDateString();
+      saveTransaction(user.id, state.orderItems, paymentMethod, { transactionDate, isBackdated });
       dispatch({ type: "CLEAR_ORDER" });
-      fetchProducts(); // Refetch to update inventory display
+      if (!isBackdated) {
+        fetchProducts(); // Refetch to update inventory display only if not backdated
+      }
       toast({
         title: "Success",
         description: `Transaction completed with ${paymentMethod}.`,

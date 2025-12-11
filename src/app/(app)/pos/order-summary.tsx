@@ -7,8 +7,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { X, Minus, Plus, Save, SquareArrowDown, Eraser } from "lucide-react";
-import type { OrderItem, SuspendedOrder } from "@/lib/types";
+import { X, Minus, Plus, Save, SquareArrowDown, Eraser, CalendarIcon, ChevronsUpDown } from "lucide-react";
+import type { OrderItem, SuspendedOrder, Transaction } from "@/lib/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,10 +17,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatDistanceToNow } from "date-fns";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { ReceiptModal } from "./receipt-modal";
-import type { Transaction } from "@/lib/types";
 
 
 interface OrderSummaryProps {
@@ -28,7 +36,7 @@ interface OrderSummaryProps {
   suspendedOrders: SuspendedOrder[];
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onRemoveItem: (itemId: string) => void;
-  onCheckout: (paymentMethod: 'Cash' | 'Card') => boolean;
+  onCheckout: (paymentMethod: 'Cash' | 'Card', transactionDate?: Date) => boolean;
   onSuspend: () => void;
   onResume: (orderId: string) => void;
   onClear: () => void;
@@ -46,17 +54,19 @@ export function OrderSummary({
 }: OrderSummaryProps) {
   const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [transactionDate, setTransactionDate] = useState<Date | undefined>(new Date());
+
 
   const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
   const tax = subtotal * 0.16;
   const total = subtotal + tax;
   
   const handleCheckout = (paymentMethod: 'Cash' | 'Card') => {
-    const success = onCheckout(paymentMethod);
+    const success = onCheckout(paymentMethod, transactionDate);
     if (success) {
       setLastTransaction({
         id: `TXN-${Date.now()}`,
-        timestamp: new Date().toISOString(),
+        timestamp: (transactionDate || new Date()).toISOString(),
         userId: 0, // Should get from auth user
         items: items.map((item, idx) => ({ ...item, id: idx, productName: item.name, lineTotal: item.totalPrice, unitPrice: item.unitPrice, lineCost: item.buyPrice * item.quantity})),
         totalAmount: total,
@@ -152,6 +162,43 @@ export function OrderSummary({
       {items.length > 0 && (
         <CardFooter className="flex-col !p-0">
           <div className="w-full p-6 space-y-2">
+            <Collapsible>
+                <CollapsibleTrigger className="flex justify-between items-center w-full text-sm font-medium text-muted-foreground hover:text-foreground">
+                    <span>Advanced</span>
+                    <ChevronsUpDown className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="py-4 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="transaction-date">Transaction Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                id="transaction-date"
+                                variant={"outline"}
+                                className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !transactionDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {transactionDate ? format(transactionDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={transactionDate}
+                                onSelect={setTransactionDate}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </CollapsibleContent>
+            </Collapsible>
+            
+            <Separator />
+            
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
               <span>Ksh {subtotal.toLocaleString()}</span>

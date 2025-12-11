@@ -1,3 +1,4 @@
+
 export type User = {
   id: number;
   name: string;
@@ -9,7 +10,7 @@ export type User = {
 
 export type ProductPourVariant = {
   id: number;
-  name: string; // e.g., "250ml Pour"
+  name: string; // e.g., "1/4 L"
   pourSizeML: number;
   sellPrice: number;
 };
@@ -21,7 +22,7 @@ export type Product = {
   image: string;
   type: "bottle" | "drum";
   unit: "ml" | "L" | "bottle";
-  buyPrice: number; // For drums, this is cost per liter
+  buyPrice: number; // For drums, this is cost per ml
   sellPrice: number; // For bottles
   thresholdQuantity: number; // In units for bottles, in ml for drums
   pourVariants?: ProductPourVariant[];
@@ -63,6 +64,7 @@ export type Transaction = {
   discount: number;
   paymentMethod: "Cash" | "Card";
   status: "Completed" | "Suspended" | "Cancelled" | "Reversed";
+  isBackdated?: boolean;
 };
 
 export type SuspendedOrder = {

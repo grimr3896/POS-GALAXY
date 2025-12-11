@@ -222,25 +222,32 @@ export const deleteProduct = (productId: number) => {
 
 // Transactions
 export const getTransactions = (): Transaction[] => getFromStorage("transactions", []);
-export const saveTransaction = (userId: number, items: OrderItem[], paymentMethod: 'Cash' | 'Card'): Transaction => {
+export const saveTransaction = (
+    userId: number, 
+    items: (OrderItem | TransactionItem)[], 
+    paymentMethod: 'Cash' | 'Card',
+    options: { transactionDate?: Date, isBackdated?: boolean } = {}
+): Transaction => {
     const transactions = getTransactions();
     const inventory = getInventory();
     
-    const totalAmount = items.reduce((acc, item) => acc + item.totalPrice, 0);
+    const totalAmount = items.reduce((acc, item) => acc + (item.lineTotal || (item.quantity * item.unitPrice)), 0);
     const totalCost = items.reduce((acc, item) => acc + (item.buyPrice * item.quantity), 0);
+
+    const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
     const newTransaction: Transaction = {
         id: `TXN-${Date.now()}`,
-        timestamp: new Date().toISOString(),
+        timestamp: transactionTimestamp,
         userId,
         items: items.map((item, index) => ({
             id: parseInt(`${Date.now()}${index}`), // more unique id
             productId: item.productId,
-            productName: item.name,
+            productName: item.name || ('productName' in item ? item.productName : 'Unknown'),
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             buyPrice: item.buyPrice,
-            lineTotal: item.totalPrice,
+            lineTotal: item.lineTotal || (item.quantity * item.unitPrice),
             lineCost: item.buyPrice * item.quantity,
             pourSizeML: item.pourSizeML,
         })),
@@ -251,25 +258,31 @@ export const saveTransaction = (userId: number, items: OrderItem[], paymentMetho
         discount: 0,
         paymentMethod,
         status: "Completed",
+        isBackdated: options.isBackdated || false,
     };
 
-    // Update inventory
-    items.forEach(item => {
-        if (item.type === 'bottle') {
-            const invItem = inventory.find(i => i.productId === item.productId);
-            if (invItem && invItem.quantityUnits !== undefined) {
-                invItem.quantityUnits -= item.quantity;
-            }
-        } else if (item.type === 'pour') {
-             const drumInvItem = inventory.find(i => i.productId === item.productId);
-             if (drumInvItem && drumInvItem.currentML !== undefined && item.pourSizeML) {
-                const totalMLDeducted = item.pourSizeML * item.quantity;
-                drumInvItem.currentML -= totalMLDeducted;
-             }
-        }
-    });
+    // Update inventory ONLY if it's not a backdated transaction
+    if (!newTransaction.isBackdated) {
+        items.forEach(item => {
+            const product = getProducts().find(p => p.id === item.productId);
+            if (!product) return;
 
-    saveToStorage("inventory", inventory);
+            if (product.type === 'bottle') {
+                const invItem = inventory.find(i => i.productId === item.productId);
+                if (invItem && invItem.quantityUnits !== undefined) {
+                    invItem.quantityUnits -= item.quantity;
+                }
+            } else if (product.type === 'drum' && item.pourSizeML) {
+                 const drumInvItem = inventory.find(i => i.productId === item.productId);
+                 if (drumInvItem && drumInvItem.currentML !== undefined) {
+                    const totalMLDeducted = item.pourSizeML * item.quantity;
+                    drumInvItem.currentML -= totalMLDeducted;
+                 }
+            }
+        });
+        saveToStorage("inventory", inventory);
+    }
+
     transactions.unshift(newTransaction);
     saveToStorage("transactions", transactions);
 
@@ -291,24 +304,26 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
         throw new Error("Transaction has already been reversed.");
     }
 
-    // 1. Restore stock
-    transaction.items.forEach(item => {
-        const productDetails = allProducts.find(p => p.id === item.productId);
-        if (!productDetails) return;
+    // 1. Restore stock ONLY if it was not a backdated transaction
+    if (!transaction.isBackdated) {
+      transaction.items.forEach(item => {
+          const productDetails = allProducts.find(p => p.id === item.productId);
+          if (!productDetails) return;
 
-        if (productDetails.type === 'bottle') {
-            const invItem = inventory.find(i => i.productId === item.productId);
-            if (invItem && invItem.quantityUnits !== undefined) {
-                invItem.quantityUnits += item.quantity;
-            }
-        } else if (productDetails.type === 'drum' && item.pourSizeML) {
-            const drumInvItem = inventory.find(i => i.productId === item.productId);
-            if (drumInvItem && drumInvItem.currentML !== undefined) {
-                const totalMLRestored = item.pourSizeML * item.quantity;
-                drumInvItem.currentML += totalMLRestored;
-            }
-        }
-    });
+          if (productDetails.type === 'bottle') {
+              const invItem = inventory.find(i => i.productId === item.productId);
+              if (invItem && invItem.quantityUnits !== undefined) {
+                  invItem.quantityUnits += item.quantity;
+              }
+          } else if (productDetails.type === 'drum' && item.pourSizeML) {
+              const drumInvItem = inventory.find(i => i.productId === item.productId);
+              if (drumInvItem && drumInvItem.currentML !== undefined) {
+                  const totalMLRestored = item.pourSizeML * item.quantity;
+                  drumInvItem.currentML += totalMLRestored;
+              }
+          }
+      });
+    }
 
     // 2. Mark original transaction as reversed
     transactions[transactionIndex].status = 'Reversed';
