@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { Product, InventoryItem, OrderItem, ProductPourVariant } from "@/lib/types";
 import { createOrderItem } from "./pos-helpers";
@@ -27,9 +27,10 @@ export function DrumWidget({ drumProduct, onAddItem }: DrumWidgetProps) {
     <Card>
       <CardHeader>
         <CardTitle>{drumProduct.name} Drum</CardTitle>
+        <CardDescription>Select a pour size to add to the order.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4 md:flex-row">
-        <div className="relative h-48 w-32 rounded-lg bg-muted p-2 shadow-inner">
+        <div className="relative h-48 w-32 flex-shrink-0 rounded-lg bg-muted p-2 shadow-inner">
           <div
             className="absolute bottom-2 left-2 right-2 rounded-md bg-primary transition-all duration-500"
             style={{ height: `${fillPercentage}%` }}
@@ -47,8 +48,7 @@ export function DrumWidget({ drumProduct, onAddItem }: DrumWidgetProps) {
           )}
         </div>
         <div className="flex flex-1 flex-col gap-3">
-            <p className="text-sm text-muted-foreground">Select a pour size:</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {pourVariants?.map(variant => (
                     <Button 
                         key={variant.id} 
