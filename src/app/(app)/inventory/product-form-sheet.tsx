@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -100,13 +101,12 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
         const defaultValues: FormValues = {
           ...product,
           sellPrice: product.type === 'bottle' ? product.sellPrice : undefined,
-          // Ensure pourVariants is an array
           pourVariants: product.pourVariants || [], 
         };
         reset(defaultValues);
         if (product.image) setImagePreview(product.image);
+        else setImagePreview(null);
       } else {
-        // Reset to a clean state for a new product
         const newImage = `https://picsum.photos/seed/${Math.random()}/400/400`;
         reset({
           id: undefined,
@@ -122,16 +122,22 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
         });
         setImagePreview(newImage);
       }
+    } else {
+        // Clear preview when sheet closes
+        setImagePreview(null);
     }
   }, [product, isOpen, reset]);
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // For this placeholder-based approach, we just generate a new random picsum URL
-      const newImage = `https://picsum.photos/seed/${Math.random()}/400/400`;
-      setValue("image", newImage);
-      setImagePreview(newImage);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        setValue("image", dataUri);
+        setImagePreview(dataUri);
+      };
+      reader.readAsDataURL(file);
     }
   };
   
