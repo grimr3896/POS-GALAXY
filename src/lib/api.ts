@@ -8,71 +8,13 @@ import { getUUID } from "@/lib/utils";
 // --- Seed Data ---
 const seedUsers: User[] = [
   { id: 1, name: "Admin User", email: "admin@galaxyinn.com", phone: "0712345678", role: "Admin", companyCardId: "1001" },
-  { id: 2, name: "Cashier One", email: "cashier1@galaxyinn.com", phone: "0787654321", role: "Cashier", companyCardId: "1002" },
-  { id: 3, name: "Manager Mike", email: "manager@galaxyinn.com", phone: "0722000000", role: "Manager", companyCardId: "1003" },
-  { id: 4, name: "Waiter Wendy", email: "waiter@galaxyinn.com", phone: "0733000000", role: "Waiter", companyCardId: "1004" },
-  { id: 5, name: "Stocker Steve", email: "stock@galaxyinn.com", phone: "0744000000", role: "Inventory Clerk", companyCardId: "1005" },
-  { id: 6, name: "Guard George", email: "security@galaxyinn.com", phone: "0755000000", role: "Security", companyCardId: "1006" },
 ];
 
-const seedProducts: Product[] = [
-  { id: 1, sku: "GUIN330", name: "Guinness", image: PlaceHolderImages.find(p => p.id === 'guinness')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 150, sellPrice: 300, thresholdQuantity: 10 },
-  { id: 2, sku: "TASC500", name: "Tascar", image: PlaceHolderImages.find(p => p.id === 'tascar')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 120, sellPrice: 250, thresholdQuantity: 10 },
-  { id: 3, sku: "VODK750", name: "Vodka", image: PlaceHolderImages.find(p => p.id === 'vodka')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 800, sellPrice: 1500, thresholdQuantity: 5 },
-  { id: 4, sku: "COKE500", name: "Coca-Cola", image: PlaceHolderImages.find(p => p.id === 'coke')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 40, sellPrice: 80, thresholdQuantity: 20 },
-  { id: 5, sku: "WTR1000", name: "Mineral Water", image: PlaceHolderImages.find(p => p.id === 'water')?.imageUrl || '', type: "bottle", unit: "bottle", buyPrice: 50, sellPrice: 100, thresholdQuantity: 20 },
-  
-  // Drum Products with pour variants
-  { 
-    id: 6, 
-    sku: "WHISKEYD", 
-    name: "Whiskey", 
-    image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', 
-    type: "drum", 
-    unit: "L", 
-    buyPrice: 0.4, // Price per ML
-    sellPrice: 0, 
-    thresholdQuantity: 5000, // 5L
-    pourVariants: [
-        { id: 1, name: "1/4 L", pourSizeML: 250, sellPrice: 250 },
-        { id: 2, name: "1/2 L", pourSizeML: 500, sellPrice: 450 },
-        { id: 3, name: "1 L", pourSizeML: 1000, sellPrice: 850 },
-    ]
-  },
-  { 
-    id: 7, 
-    sku: "VODKAD", 
-    name: "Vodka", 
-    image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', 
-    type: "drum", 
-    unit: "L", 
-    buyPrice: 0.3, // Price per ML
-    sellPrice: 0, 
-    thresholdQuantity: 3000, // 3L
-    pourVariants: [
-        { id: 1, name: "1/4 L", pourSizeML: 250, sellPrice: 220 },
-        { id: 2, name: "1/2 L", pourSizeML: 500, sellPrice: 400 },
-        { id: 3, name: "1 L", pourSizeML: 1000, sellPrice: 750 },
-    ]
-  },
-];
+const seedProducts: Product[] = [];
 
+const seedInventory: InventoryItem[] = [];
 
-const seedInventory: InventoryItem[] = [
-  { id: 1, productId: 1, quantityUnits: 50, lastRestockAt: new Date().toISOString() },
-  { id: 2, productId: 2, quantityUnits: 40, lastRestockAt: new Date().toISOString() },
-  { id: 3, productId: 3, quantityUnits: 12, lastRestockAt: new Date().toISOString() },
-  { id: 4, productId: 4, quantityUnits: 100, lastRestockAt: new Date().toISOString() },
-  { id: 5, productId: 5, quantityUnits: 80, lastRestockAt: new Date().toISOString() },
-  // Drum Inventory is linked to the PARENT product ID
-  { id: 6, productId: 6, capacityML: 50000, currentML: 49750, lastRestockAt: new Date().toISOString() },
-  { id: 7, productId: 7, capacityML: 15000, currentML: 15000, lastRestockAt: new Date().toISOString() },
-];
-
-const seedExpenses: Expense[] = [
-    { id: 1, date: new Date().toISOString(), description: 'Electricity Bill', amount: 5000, category: 'Utilities', userId: 1 },
-    { id: 2, date: new Date().toISOString(), description: 'Cleaning Supplies', amount: 1200, category: 'Supplies', userId: 1 },
-];
+const seedExpenses: Expense[] = [];
 
 
 // --- LocalStorage Wrapper ---
@@ -101,7 +43,8 @@ const saveToStorage = <T,>(key: string, value: T) => {
 
 // Initialize if not present
 const initStorage = () => {
-  if (typeof window !== "undefined" && !window.localStorage.getItem("pos_initialized")) {
+  if (typeof window !== "undefined") {
+    // Force reset on every load for this "clear" operation
     saveToStorage("users", seedUsers);
     saveToStorage("products", seedProducts);
     saveToStorage("inventory", seedInventory);
@@ -229,11 +172,11 @@ export const getTransactions = (): Transaction[] => getFromStorage("transactions
 
 const calculateLineCost = (item: OrderItem | TransactionItem, product: Product): number => {
     if (product.type === 'drum' && item.pourSizeML) {
+        // buyPrice is per ml for drums
         return product.buyPrice * item.pourSizeML;
     }
     return product.buyPrice;
 };
-
 
 export const saveTransaction = (
     userId: number, 
@@ -245,12 +188,17 @@ export const saveTransaction = (
     const inventory = getInventory();
     const allProducts = getProducts();
     
+    // The total is tax-inclusive. We need to back-calculate subtotal and tax.
+    const total = items.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
+    const subtotal = total / 1.16; // Back-calculate subtotal
+    const tax = total - subtotal; // The tax amount
+    
     const transactionItems: TransactionItem[] = items.map((item, index) => {
         const product = allProducts.find(p => p.id === item.productId);
         if (!product) throw new Error(`Product with ID ${item.productId} not found during transaction save.`);
         
         const unitBuyPrice = calculateLineCost(item, product);
-        const lineTotal = item.quantity * item.unitPrice;
+        const lineTotal = item.quantity * item.unitPrice; // This is tax-inclusive
         const lineCost = item.quantity * unitBuyPrice;
 
         return {
@@ -266,9 +214,8 @@ export const saveTransaction = (
         }
     });
     
-    const total = transactionItems.reduce((acc, item) => acc + item.lineTotal, 0);
-    const subtotal = total; // Tax is inclusive
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
+    // Profit is based on the pre-tax subtotal
     const profit = subtotal - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
@@ -278,8 +225,9 @@ export const saveTransaction = (
         timestamp: transactionTimestamp,
         userId,
         items: transactionItems,
-        total,
-        subtotal,
+        subtotal: subtotal,
+        tax: tax,
+        total: total,
         totalCost,
         profit,
         discount: 0,
@@ -315,6 +263,7 @@ export const saveTransaction = (
 
     return newTransaction;
 }
+
 
 export const reverseTransaction = (transactionId: string): OrderItem[] => {
     const transactions = getTransactions();
@@ -367,7 +316,7 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
                 id: getUUID(),
                 productId: item.productId,
                 name: item.productName,
-                image: '',
+                image: `https://picsum.photos/seed/${item.productId}/400/400`,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
                 buyPrice: item.buyPrice,
@@ -385,7 +334,8 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
                 image: product.image,
                 quantity: item.quantity,
                 unitPrice: variant?.sellPrice || 0,
-                buyPrice: product.buyPrice, // This is now per-ml
+                // The API's `createOrderItem` will recalculate this based on per-ml cost, so we just need to pass the base product cost
+                buyPrice: product.buyPrice, 
                 totalPrice: item.lineTotal,
                 type: 'pour',
                 pourSizeML: item.pourSizeML,
@@ -463,14 +413,17 @@ export const getDashboardData = () => {
     };
 
     const dailyStats = todaysTransactions.reduce((acc, t) => {
-        acc.todaysSales += t.total;
+        // Use subtotal for revenue as it's pre-tax
+        acc.todaysSales += t.subtotal;
         acc.todaysProfit += t.profit || 0;
 
         t.items.forEach(item => {
             const productName = item.productName;
-            const itemProfit = item.lineTotal - item.lineCost;
+            // Item line total is tax-inclusive, so we back-calculate the subtotal for the item
+            const itemSubtotal = item.lineTotal / 1.16;
+            const itemProfit = itemSubtotal - item.lineCost;
             
-            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
+            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + itemSubtotal;
             acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;
         });
 
