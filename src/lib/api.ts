@@ -179,7 +179,10 @@ const calculateLineCost = (item: OrderItem | TransactionItem, product: Product):
 
 export interface PaymentDetails {
     amountReceived: number;
-    paymentMethod: 'Cash' | 'Mpesa';
+    paymentMethod: 'Cash' | 'Mpesa' | 'Split';
+    cashAmount: number;
+    mpesaAmount: number;
+    change: number;
 }
 
 export const saveTransaction = (
@@ -193,9 +196,6 @@ export const saveTransaction = (
     const allProducts = getProducts();
     
     const total = items.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
-    // Tax is included in sellPrice. We back-calculate it.
-    const subtotal = total / 1.16;
-    const tax = total - subtotal;
     
     const transactionItems: TransactionItem[] = items.map((item, index) => {
         const product = allProducts.find(p => p.id === item.productId);
@@ -219,8 +219,7 @@ export const saveTransaction = (
     });
     
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
-    // Profit is based on the pre-tax subtotal
-    const profit = subtotal - totalCost;
+    const profit = total - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -229,11 +228,11 @@ export const saveTransaction = (
         timestamp: transactionTimestamp,
         userId,
         items: transactionItems,
-        subtotal: subtotal,
-        tax: tax,
         total: total,
         amountReceived: paymentDetails.amountReceived,
-        change: paymentDetails.amountReceived - total,
+        cashAmount: paymentDetails.cashAmount,
+        mpesaAmount: paymentDetails.mpesaAmount,
+        change: paymentDetails.change,
         totalCost,
         profit,
         discount: 0,
@@ -419,12 +418,11 @@ export const getDashboardData = () => {
     };
 
     const dailyStats = todaysTransactions.reduce((acc, t) => {
-        acc.todaysSales += t.total; // This is the gross revenue including tax
-        acc.todaysProfit += t.profit || 0; // This is subtotal - cost
+        acc.todaysSales += t.total;
+        acc.todaysProfit += t.profit || 0;
 
         t.items.forEach(item => {
             const productName = item.productName;
-            // Item profit is sell price (inc. tax) - buy price
             const itemProfit = item.lineTotal - item.lineCost;
             
             acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
@@ -464,3 +462,24 @@ export const getDashboardData = () => {
         stockAlerts
     };
 }
+
+export const getCashUpSummary = (date: Date) => {
+    const transactions = getTransactions();
+    const selectedDate = date.toISOString().split('T')[0];
+    
+    const todaysTransactions = transactions.filter(t => t.timestamp.startsWith(selectedDate) && t.status === 'Completed');
+
+    const summary = {
+        totalSales: todaysTransactions.reduce((sum, t) => sum + t.total, 0),
+        cashSales: todaysTransactions.reduce((sum, t) => sum + (t.cashAmount || 0), 0),
+        mpesaSales: todaysTransactions.reduce((sum, t) => sum + (t.mpesaAmount || 0), 0),
+        transactionCount: todaysTransactions.length,
+    };
+    
+    const expectedCash = summary.cashSales - todaysTransactions.reduce((sum, t) => sum + (t.paymentMethod === 'Cash' || t.paymentMethod === 'Split' ? t.change : 0), 0);
+
+    return {
+        ...summary,
+        expectedCash,
+    };
+};

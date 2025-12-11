@@ -58,15 +58,15 @@ export type Transaction = {
   timestamp: string;
   userId: number;
   items: TransactionItem[];
-  subtotal: number;
-  tax: number;
   total: number;
   amountReceived: number;
+  cashAmount: number;
+  mpesaAmount: number;
   change: number;
   totalCost: number;
   profit: number;
   discount: number;
-  paymentMethod: "Cash" | "Mpesa";
+  paymentMethod: "Cash" | "Mpesa" | "Split";
   status: "Completed" | "Suspended" | "Cancelled" | "Reversed";
   isBackdated?: boolean;
 };
@@ -134,7 +134,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'settings:read',
   ],
   Cashier: [
-    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history',
+    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:reports',
     'pos:create', 'pos:read',
     'inventory:read',
     'sales:read_own',

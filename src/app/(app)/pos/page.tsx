@@ -85,7 +85,7 @@ export default function POSPage() {
       }
       toast({
         title: "Success",
-        description: `Transaction completed with ${paymentDetails.paymentMethod}.`,
+        description: `Transaction completed.`,
       });
       return true;
     } catch (error) {

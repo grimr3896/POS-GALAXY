@@ -45,6 +45,9 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
     }
   };
 
+  const hasCash = transaction.cashAmount > 0;
+  const hasMpesa = transaction.mpesaAmount > 0;
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -74,10 +77,6 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
               <span>Cashier:</span>
               <span>{user?.name}</span>
             </div>
-             <div className="flex justify-between">
-              <span>Payment Method:</span>
-              <span>{transaction.paymentMethod}</span>
-            </div>
           </div>
           <Separator />
           <div className="my-4 space-y-2">
@@ -95,14 +94,6 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
           </div>
           <Separator />
            <div className="my-4 space-y-1 text-sm">
-                <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>Ksh {transaction.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span>Tax (16%):</span>
-                    <span>Ksh {transaction.tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
                 <div className="flex justify-between font-bold text-base mt-1">
                     <span>TOTAL:</span>
                     <span>Ksh {transaction.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -110,10 +101,18 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
             </div>
           <Separator />
           <div className="my-4 space-y-1 text-sm">
-                <div className="flex justify-between">
-                    <span>Amount Paid:</span>
-                    <span>Ksh {transaction.amountReceived.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
+                {hasCash && (
+                    <div className="flex justify-between">
+                        <span>Paid (Cash):</span>
+                        <span>Ksh {transaction.cashAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                )}
+                {hasMpesa && (
+                     <div className="flex justify-between">
+                        <span>Paid (M-Pesa):</span>
+                        <span>Ksh {transaction.mpesaAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                )}
                  <div className="flex justify-between font-bold">
                     <span>Change:</span>
                     <span>Ksh {transaction.change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>

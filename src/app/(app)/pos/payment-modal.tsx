@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { PaymentDetails } from "@/lib/api";
 
@@ -24,7 +25,7 @@ interface PaymentModalProps {
   onPaymentComplete: (paymentDetails: PaymentDetails) => void;
 }
 
-const quickAmounts = [100, 200, 500, 1000, 2000, 5000];
+const quickCashAmounts = [1000, 2000, 5000];
 
 export function PaymentModal({
   isOpen,
@@ -32,31 +33,62 @@ export function PaymentModal({
   totalAmount,
   onPaymentComplete,
 }: PaymentModalProps) {
-  const [amountReceived, setAmountReceived] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Mpesa">("Cash");
+  const [cashAmount, setCashAmount] = useState("");
+  const [mpesaAmount, setMpesaAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Mpesa" | "Split">("Cash");
   const [error, setError] = useState("");
 
-  const numericAmountReceived = parseFloat(amountReceived) || 0;
-  const change = numericAmountReceived - totalAmount;
+  const numericCash = parseFloat(cashAmount) || 0;
+  const numericMpesa = parseFloat(mpesaAmount) || 0;
+  
+  const totalPaid = {
+    Cash: numericCash,
+    Mpesa: numericMpesa,
+    Split: numericCash + numericMpesa
+  }[paymentMethod] || 0;
+
+  const change = Math.max(0, totalPaid - totalAmount);
+  const remaining = Math.max(0, totalAmount - totalPaid);
 
   useEffect(() => {
     if (isOpen) {
-      setAmountReceived(totalAmount.toString());
-      setError("");
       setPaymentMethod("Cash");
+      setCashAmount(totalAmount.toString());
+      setMpesaAmount("");
+      setError("");
     }
   }, [isOpen, totalAmount]);
   
+  useEffect(() => {
+    setError("");
+    if (paymentMethod === "Cash") {
+      setCashAmount(totalAmount.toString());
+      setMpesaAmount("");
+    } else if (paymentMethod === "Mpesa") {
+      setMpesaAmount(totalAmount.toString());
+      setCashAmount("");
+    } else if (paymentMethod === "Split") {
+      // Keep existing values or clear them
+    }
+  }, [paymentMethod, totalAmount]);
+
   const handlePayment = () => {
-    if (numericAmountReceived < totalAmount) {
-      setError(`Insufficient amount. Must be at least Ksh ${totalAmount.toFixed(2)}`);
+    if (totalPaid < totalAmount) {
+      setError(`Insufficient amount. Still need Ksh ${remaining.toFixed(2)}`);
       return;
     }
 
     onPaymentComplete({
-      amountReceived: numericAmountReceived,
-      paymentMethod: paymentMethod,
+      paymentMethod,
+      cashAmount: paymentMethod === 'Mpesa' ? 0 : numericCash,
+      mpesaAmount: paymentMethod === 'Cash' ? 0 : numericMpesa,
+      amountReceived: totalPaid,
+      change: change,
     });
+  };
+  
+  const handleQuickCash = (amount: number) => {
+    setCashAmount(amount.toString());
   };
 
   return (
@@ -66,72 +98,75 @@ export function PaymentModal({
           <DialogTitle>Complete Payment</DialogTitle>
           <DialogDescription>
             Total Amount Due:{" "}
-            <span className="font-bold text-lg text-foreground">
+            <span className="font-bold text-2xl text-foreground">
               Ksh {totalAmount.toLocaleString()}
             </span>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-2">
-          {/* Payment Method */}
-          <div>
-            <Label className="mb-2 block">Payment Method</Label>
-            <div className="flex gap-2">
-              {(["Cash", "Mpesa"] as const).map((method) => (
-                <Button
-                  key={method}
-                  variant={paymentMethod === method ? "default" : "outline"}
-                  className="flex-1"
-                  onClick={() => setPaymentMethod(method)}
-                >
-                  {method}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Amount Received */}
-          {paymentMethod === "Cash" && (
-            <div className="space-y-2">
-              <Label htmlFor="amount-received">Amount Received</Label>
-              <Input
-                id="amount-received"
-                type="number"
-                value={amountReceived}
-                onChange={(e) => {
-                  setAmountReceived(e.target.value);
-                  setError("");
-                }}
-                placeholder="0.00"
-                autoFocus
-              />
-              <div className="grid grid-cols-3 gap-2 pt-2">
-                {quickAmounts.map((amount) => (
-                  <Button
-                    key={amount}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAmountReceived(amount.toString())}
-                  >
-                    {amount.toLocaleString()}
-                  </Button>
-                ))}
+        <Tabs value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="Cash">Cash</TabsTrigger>
+            <TabsTrigger value="Mpesa">M-Pesa</TabsTrigger>
+            <TabsTrigger value="Split">Split</TabsTrigger>
+          </TabsList>
+          
+          <div className="py-4 space-y-4">
+            {(paymentMethod === 'Cash' || paymentMethod === 'Split') && (
+              <div className="space-y-2">
+                <Label htmlFor="cash-amount">Cash Amount Received</Label>
+                <Input
+                  id="cash-amount"
+                  type="number"
+                  value={cashAmount}
+                  onChange={(e) => setCashAmount(e.target.value)}
+                  placeholder="0.00"
+                  autoFocus
+                />
+                 <div className="grid grid-cols-3 gap-2 pt-2">
+                    <Button variant="outline" size="sm" onClick={() => handleQuickCash(totalAmount)}>Exact</Button>
+                    {quickCashAmounts.map((amount) => (
+                      <Button
+                        key={amount}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuickCash(amount)}
+                      >
+                        {amount.toLocaleString()}
+                      </Button>
+                    ))}
+                  </div>
               </div>
-            </div>
-          )}
+            )}
+             {(paymentMethod === 'Mpesa' || paymentMethod === 'Split') && (
+              <div className="space-y-2">
+                <Label htmlFor="mpesa-amount">M-Pesa Amount Received</Label>
+                <Input
+                  id="mpesa-amount"
+                  type="number"
+                  value={mpesaAmount}
+                  onChange={(e) => setMpesaAmount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            )}
+            
+            {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
-          {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-
-          {/* Change Calculation */}
-          {paymentMethod === "Cash" && change >= 0 && (
-             <div className="!mt-4 rounded-lg border bg-secondary p-4 text-center">
-                <p className="text-sm text-secondary-foreground">Change Due</p>
-                <p className="text-3xl font-bold text-primary">
-                    Ksh {change.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                </p>
+            {/* Summary Section */}
+            <div className="!mt-6 space-y-3 rounded-lg border bg-muted/50 p-4">
+                 <div className="flex justify-between font-semibold">
+                    <span>Total Paid:</span>
+                    <span>Ksh {totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                 <div className={cn("flex justify-between font-semibold", remaining > 0 ? "text-destructive" : "text-green-600")}>
+                    <span>{remaining > 0 ? 'Remaining:' : 'Change Due:'}</span>
+                    <span>Ksh {(remaining > 0 ? remaining : change).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
             </div>
-          )}
-        </div>
+
+          </div>
+        </Tabs>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -139,7 +174,7 @@ export function PaymentModal({
           </Button>
           <Button
             onClick={handlePayment}
-            disabled={paymentMethod === 'Cash' && numericAmountReceived < totalAmount}
+            disabled={totalPaid < totalAmount}
           >
             Confirm Payment
           </Button>

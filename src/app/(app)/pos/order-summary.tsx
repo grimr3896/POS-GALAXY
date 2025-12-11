@@ -7,8 +7,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { X, Minus, Plus, Save, SquareArrowDown, Eraser, CalendarIcon, ChevronsUpDown } from "lucide-react";
-import type { OrderItem, SuspendedOrder, Transaction } from "@/lib/types";
+import { X, Minus, Plus, Save, Eraser } from "lucide-react";
+import type { OrderItem, SuspendedOrder } from "@/lib/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,17 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { format, formatDistanceToNow } from "date-fns";
-import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 
 
 interface OrderSummaryProps {
@@ -51,13 +41,8 @@ export function OrderSummary({
   onResume,
   onClear,
 }: OrderSummaryProps) {
-  const [transactionDate, setTransactionDate] = useState<Date | undefined>(new Date());
   
   const total = items.reduce((acc, item) => acc + item.totalPrice, 0);
-
-  // Since prices are tax-inclusive, we back-calculate the subtotal and tax
-  const subtotal = total / 1.16;
-  const tax = total - subtotal;
 
   return (
     <>
@@ -139,17 +124,6 @@ export function OrderSummary({
       {items.length > 0 && (
         <CardFooter className="flex-col !p-0">
           <div className="w-full p-6 space-y-2">
-            <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>Ksh {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-             <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax (16%)</span>
-                <span>Ksh {tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-            
-            <Separator />
-
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
               <span>Ksh {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>

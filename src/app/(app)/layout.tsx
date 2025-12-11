@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Icons } from "@/components/icons";
 import { UserNav } from "@/components/user-nav";
-import { LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/auth-context";
@@ -28,6 +28,7 @@ const navItems: { href: string; label: string; icon: React.ElementType, permissi
   { href: "/inventory", label: "Inventory", icon: Archive, permission: 'page:inventory' },
   { href: "/sales-history", label: "Sales History", icon: History, permission: 'page:sales-history' },
   { href: "/expenses", label: "Expenses", icon: Landmark, permission: 'page:expenses' },
+  { href: "/cash-up", label: "Cash Up", icon: Wallet, permission: 'page:reports' },
   { href: "/reports", label: "Reports", icon: FileText, permission: 'page:reports' },
   { href: "/employees", label: "Employees", icon: Users, permission: 'page:employees' },
   { href: "/settings", label: "Settings", icon: Settings, permission: 'page:settings' },
