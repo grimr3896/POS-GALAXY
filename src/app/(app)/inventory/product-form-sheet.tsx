@@ -238,12 +238,12 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                    {fields.map((field, index) => (
                     <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start p-3 border rounded-md">
                         <div className="col-span-12 sm:col-span-4">
-                            <Label>Name</Label>
-                            <Input {...register(`pourVariants.${index}.name`)} placeholder="e.g. Single Shot" />
+                            <Label>Display Name</Label>
+                            <Input {...register(`pourVariants.${index}.name`)} placeholder="e.g. 1/4 L" />
                         </div>
                         <div className="col-span-6 sm:col-span-3">
                             <Label>Size (ml)</Label>
-                            <Input type="number" {...register(`pourVariants.${index}.pourSizeML`)} placeholder="e.g. 30" />
+                            <Input type="number" {...register(`pourVariants.${index}.pourSizeML`)} placeholder="e.g. 250" />
                         </div>
                         <div className="col-span-6 sm:col-span-3">
                             <Label>Price (Ksh)</Label>

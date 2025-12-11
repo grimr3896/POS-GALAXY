@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant } from "./types";
@@ -29,9 +30,9 @@ const seedProducts: Product[] = [
     sellPrice: 0, 
     thresholdQuantity: 5000,
     pourVariants: [
-        { id: 1, name: "250ml", pourSizeML: 250, sellPrice: 250 },
-        { id: 2, name: "500ml", pourSizeML: 500, sellPrice: 450 },
-        { id: 3, name: "1L", pourSizeML: 1000, sellPrice: 850 },
+        { id: 1, name: "1/4 L", pourSizeML: 250, sellPrice: 250 },
+        { id: 2, name: "1/2 L", pourSizeML: 500, sellPrice: 450 },
+        { id: 3, name: "1 L", pourSizeML: 1000, sellPrice: 850 },
     ]
   },
   { 
@@ -45,9 +46,9 @@ const seedProducts: Product[] = [
     sellPrice: 0, 
     thresholdQuantity: 5000,
     pourVariants: [
-        { id: 1, name: "250ml", pourSizeML: 250, sellPrice: 220 },
-        { id: 2, name: "500ml", pourSizeML: 500, sellPrice: 400 },
-        { id: 3, name: "1L", pourSizeML: 1000, sellPrice: 750 },
+        { id: 1, name: "1/4 L", pourSizeML: 250, sellPrice: 220 },
+        { id: 2, name: "1/2 L", pourSizeML: 500, sellPrice: 400 },
+        { id: 3, name: "1 L", pourSizeML: 1000, sellPrice: 750 },
     ]
   },
 ];
@@ -60,7 +61,7 @@ const seedInventory: InventoryItem[] = [
   { id: 4, productId: 4, quantityUnits: 100, lastRestockAt: new Date().toISOString() },
   { id: 5, productId: 5, quantityUnits: 80, lastRestockAt: new Date().toISOString() },
   // Drum Inventory is linked to the PARENT product ID
-  { id: 6, productId: 6, capacityML: 50000, currentML: 24000, lastRestockAt: new Date().toISOString() },
+  { id: 6, productId: 6, capacityML: 50000, currentML: 49750, lastRestockAt: new Date().toISOString() },
   { id: 7, productId: 7, capacityML: 25000, currentML: 15000, lastRestockAt: new Date().toISOString() },
 ];
 
@@ -71,7 +72,7 @@ const seedExpenses: Expense[] = [
 
 
 // --- LocalStorage Wrapper ---
-const getFromStorage = <T>(key: string, defaultValue: T): T => {
+const getFromStorage = <T,>(key: string, defaultValue: T): T => {
   if (typeof window === "undefined") return defaultValue;
   try {
     const item = window.localStorage.getItem(key);
@@ -84,7 +85,7 @@ const getFromStorage = <T>(key: string, defaultValue: T): T => {
   return defaultValue;
 };
 
-const saveToStorage = <T>(key: string, value: T) => {
+const saveToStorage = <T,>(key: string, value: T) => {
   if (typeof window === "undefined") return;
   try {
     const item = JSON.stringify(value);
@@ -338,7 +339,7 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
              return {
                 id: getUUID(),
                 productId: product.id,
-                name: `${product.name} (${item.pourSizeML}ml)`,
+                name: `${product.name} (${variant?.name || ''})`,
                 image: product.image,
                 quantity: item.quantity,
                 unitPrice: variant?.sellPrice || 0,
