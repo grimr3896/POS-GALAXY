@@ -107,11 +107,12 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
         if (product.image) setImagePreview(product.image);
       } else {
         // Reset to a clean state for a new product
+        const newImage = `https://picsum.photos/seed/${Math.random()}/400/400`;
         reset({
           id: undefined,
           name: "",
           sku: "",
-          image: "",
+          image: newImage,
           type: "bottle",
           buyPrice: 0,
           sellPrice: 0,
@@ -119,7 +120,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
           inventory: { quantityUnits: 0, currentML: 0, capacityML: 0 },
           pourVariants: [],
         });
-        setImagePreview(null);
+        setImagePreview(newImage);
       }
     }
   }, [product, isOpen, reset]);
@@ -127,13 +128,10 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUri = reader.result as string;
-        setValue("image", dataUri);
-        setImagePreview(dataUri);
-      };
-      reader.readAsDataURL(file);
+      // For this placeholder-based approach, we just generate a new random picsum URL
+      const newImage = `https://picsum.photos/seed/${Math.random()}/400/400`;
+      setValue("image", newImage);
+      setImagePreview(newImage);
     }
   };
   

@@ -162,7 +162,7 @@ export const getProductsWithInventory = () => {
 export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: InventoryItem, id?: number }): Product => {
   const products = getProducts();
   const inventory = getInventory();
-  const defaultImage = "https://picsum.photos/seed/placeholder/400/400";
+  const defaultImage = `https://picsum.photos/seed/${Math.random()}/400/400`;
 
   if (productData.id) { // Update existing product
     const productIndex = products.findIndex(p => p.id === productData.id);
@@ -229,9 +229,9 @@ export const getTransactions = (): Transaction[] => getFromStorage("transactions
 
 const calculateLineCost = (item: OrderItem | TransactionItem, product: Product): number => {
     if (product.type === 'drum' && item.pourSizeML) {
-        return product.buyPrice * item.pourSizeML * item.quantity;
+        return product.buyPrice * item.pourSizeML;
     }
-    return product.buyPrice * item.quantity;
+    return product.buyPrice;
 };
 
 
@@ -249,8 +249,9 @@ export const saveTransaction = (
         const product = allProducts.find(p => p.id === item.productId);
         if (!product) throw new Error(`Product with ID ${item.productId} not found during transaction save.`);
         
-        const lineTotal = item.totalPrice || (item.quantity * item.unitPrice);
-        const lineCost = calculateLineCost(item, product);
+        const unitBuyPrice = calculateLineCost(item, product);
+        const lineTotal = item.quantity * item.unitPrice;
+        const lineCost = item.quantity * unitBuyPrice;
 
         return {
             id: parseInt(`${Date.now()}${index}`),
@@ -258,7 +259,7 @@ export const saveTransaction = (
             productName: item.name || ('productName' in item ? item.productName : 'Unknown'),
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            buyPrice: product.buyPrice,
+            buyPrice: unitBuyPrice,
             lineTotal: lineTotal,
             lineCost: lineCost,
             pourSizeML: item.pourSizeML,
@@ -266,8 +267,9 @@ export const saveTransaction = (
     });
     
     const total = transactionItems.reduce((acc, item) => acc + item.lineTotal, 0);
+    const subtotal = total; // Tax is inclusive
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
-    const profit = total - totalCost;
+    const profit = subtotal - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -277,6 +279,7 @@ export const saveTransaction = (
         userId,
         items: transactionItems,
         total,
+        subtotal,
         totalCost,
         profit,
         discount: 0,
