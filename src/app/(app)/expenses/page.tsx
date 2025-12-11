@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -19,7 +20,7 @@ export default function ExpensesPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [expenseToAction, setExpenseToAction] = useState<{action: 'edit' | 'delete', expense: Expense | null}>({action: 'edit', expense: null});
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
 
   const fetchData = useCallback(() => {
@@ -39,14 +40,17 @@ export default function ExpensesPage() {
   };
 
   const handleEditRequest = (expense: Expense) => {
-    setExpenseToAction({ action: 'edit', expense });
-    setIsPasswordDialogOpen(true);
+    // No password needed for editing, just open the sheet
+    setEditingExpense(expense);
+    setIsSheetOpen(true);
   };
 
   const handleDeleteRequest = (expenseId: number) => {
     const expense = expenses.find(e => e.id === expenseId);
-    setExpenseToAction({ action: 'delete', expense: expense || null });
-    setIsPasswordDialogOpen(true);
+    if (expense) {
+        setExpenseToDelete(expense);
+        setIsPasswordDialogOpen(true);
+    }
   };
   
   const handlePasswordConfirm = (password: string) => {
@@ -60,12 +64,9 @@ export default function ExpensesPage() {
       return;
     }
 
-    if (expenseToAction.action === 'edit' && expenseToAction.expense) {
-        setEditingExpense(expenseToAction.expense);
-        setIsSheetOpen(true);
-    } else if (expenseToAction.action === 'delete' && expenseToAction.expense) {
+    if (expenseToDelete) {
         try {
-          deleteExpense(expenseToAction.expense.id);
+          deleteExpense(expenseToDelete.id);
           toast({ title: "Expense Deleted", description: "The expense has been removed." });
           fetchData();
         } catch (error: any) {
@@ -74,7 +75,7 @@ export default function ExpensesPage() {
     }
     
     setIsPasswordDialogOpen(false);
-    setExpenseToAction({action: 'edit', expense: null});
+    setExpenseToDelete(null);
   };
 
   const handleFormSubmit = (values: any) => {
@@ -120,8 +121,8 @@ export default function ExpensesPage() {
         isOpen={isPasswordDialogOpen}
         onOpenChange={setIsPasswordDialogOpen}
         onConfirm={handlePasswordConfirm}
-        title={`Enter Password to ${expenseToAction.action === 'edit' ? 'Edit' : 'Delete'} Expense`}
-        description="You need administrator permissions to modify expenses."
+        title="Enter Password to Delete Expense"
+        description="You need administrator permissions to delete an expense."
       />
     </div>
   );
