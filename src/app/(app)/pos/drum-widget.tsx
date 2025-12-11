@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -48,7 +47,7 @@ export function DrumWidget({ drumProduct, onAddItem }: DrumWidgetProps) {
             </div>
           )}
         </div>
-        <div className="flex flex-1 flex-col gap-3">
+        <div className="flex-1">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {pourVariants?.map(variant => (
                     <Button 
