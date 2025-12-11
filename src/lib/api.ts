@@ -229,8 +229,10 @@ export const getTransactions = (): Transaction[] => getFromStorage("transactions
 
 const calculateLineCost = (item: OrderItem | TransactionItem, product: Product): number => {
     if (product.type === 'drum' && item.pourSizeML) {
+        // Cost of a pour = (price per ml) * (size of pour in ml) * quantity of pours
         return product.buyPrice * item.pourSizeML * item.quantity;
     }
+    // Cost of a bottle = (price per bottle) * quantity of bottles
     return product.buyPrice * item.quantity;
 };
 
@@ -248,7 +250,8 @@ export const saveTransaction = (
     const transactionItems: TransactionItem[] = items.map((item, index) => {
         const product = allProducts.find(p => p.id === item.productId);
         if (!product) throw new Error(`Product with ID ${item.productId} not found during transaction save.`);
-
+        
+        // This is the tax-inclusive price for the line item
         const lineTotal = item.totalPrice || (item.quantity * item.unitPrice);
         const lineCost = calculateLineCost(item, product);
 
@@ -265,10 +268,13 @@ export const saveTransaction = (
         }
     });
     
-    const subtotal = transactionItems.reduce((acc, item) => acc + item.lineTotal, 0);
-    const tax = subtotal * 0.16;
-    const total = subtotal + tax;
+    const total = transactionItems.reduce((acc, item) => acc + item.lineTotal, 0);
+    // Back-calculate subtotal and tax from the tax-inclusive total
+    const subtotal = total / 1.16;
+    const tax = total - subtotal;
+    
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
+    // Profit is based on the pre-tax subtotal
     const profit = subtotal - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
@@ -469,9 +475,10 @@ export const getDashboardData = () => {
 
         t.items.forEach(item => {
             const productName = item.productName;
-            const itemProfit = item.lineTotal - item.lineCost;
+            const itemSubtotal = item.lineTotal / 1.16;
+            const itemProfit = itemSubtotal - item.lineCost;
             
-            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
+            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + itemSubtotal;
             acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;
         });
 

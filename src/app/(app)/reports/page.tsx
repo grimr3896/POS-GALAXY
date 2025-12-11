@@ -111,7 +111,7 @@ export default function ReportsPage() {
   const createMailtoLink = (report: Transaction[]) => {
     if(!report) return "";
 
-    const totalRevenue = report.reduce((acc, t) => acc + t.totalAmount, 0);
+    const totalRevenue = report.reduce((acc, t) => acc + t.subtotal, 0);
     const totalProfit = report.reduce((acc, t) => acc + (t.profit || 0), 0);
     const totalTransactions = report.length;
 
@@ -149,7 +149,7 @@ Galaxy Inn POS System
     const allUsers = getUsers();
     const getUserName = (userId: number) => allUsers.find(u => u.id === userId)?.name || "Unknown";
   
-    const headers = ["Transaction ID", "Date", "Time", "Employee", "Items", "Total Amount", "Total Cost", "Profit", "Tax", "Payment Method", "Status", "Is Backdated"];
+    const headers = ["Transaction ID", "Date", "Time", "Employee", "Items", "Subtotal", "Tax", "Total Amount", "Total Cost", "Profit", "Payment Method", "Status", "Is Backdated"];
   
     const escapeCsvField = (field: any) => {
       if (field === null || field === undefined) {
@@ -172,10 +172,11 @@ Galaxy Inn POS System
         escapeCsvField(new Date(t.timestamp).toLocaleTimeString()),
         escapeCsvField(getUserName(t.userId)),
         escapeCsvField(getGroupedItemsForCSV(t.items)),
-        escapeCsvField(t.totalAmount),
+        escapeCsvField(t.subtotal),
+        escapeCsvField(t.tax),
+        escapeCsvField(t.total),
         escapeCsvField(t.totalCost),
         escapeCsvField(t.profit),
-        escapeCsvField(t.tax),
         escapeCsvField(t.paymentMethod),
         escapeCsvField(t.status),
         escapeCsvField(t.isBackdated ? 'Yes' : 'No')

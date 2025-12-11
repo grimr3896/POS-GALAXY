@@ -92,17 +92,17 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
           <div className="my-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span>{transaction.subtotal.toLocaleString()}</span>
+              <span>{transaction.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between">
               <span>Tax:</span>
-              <span>{transaction.tax.toLocaleString()}</span>
+              <span>{transaction.tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
           <Separator />
           <div className="mt-4 flex justify-between font-bold text-base">
             <span>TOTAL:</span>
-            <span>Ksh {transaction.total.toLocaleString()}</span>
+            <span>Ksh {transaction.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="mt-6 text-center text-xs text-muted-foreground">
             Thank you for your business!

@@ -95,12 +95,12 @@ export function HistoricalTransactionForm({
 
   const watchItems = watch("items");
 
-  const subtotal = watchItems.reduce(
+  const total = watchItems.reduce(
     (acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0),
     0
   );
-  const tax = subtotal * 0.16;
-  const total = subtotal + tax;
+  const subtotal = total / 1.16;
+  const tax = total - subtotal;
 
   const handleProductChange = (index: number, productId: string) => {
     const numericProductId = parseInt(productId);
@@ -118,6 +118,8 @@ export function HistoricalTransactionForm({
         const firstVariant = product.pourVariants?.[0];
         setValue(`items.${index}.unitPrice`, firstVariant?.sellPrice || 0);
         setValue(`items.${index}.pourSizeML`, firstVariant?.pourSizeML || 0);
+        setValue(`items.${index}.productName`, `${product.name} (${firstVariant?.name})`);
+        setValue(`items.${index}.buyPrice`, product.buyPrice * (firstVariant?.pourSizeML || 0));
       }
     }
   };
@@ -132,6 +134,7 @@ export function HistoricalTransactionForm({
             setValue(`items.${itemIndex}.unitPrice`, variant.sellPrice);
             setValue(`items.${itemIndex}.pourSizeML`, variant.pourSizeML);
             setValue(`items.${itemIndex}.productName`, `${product.name} (${variant.name})`);
+            setValue(`items.${itemIndex}.buyPrice`, product.buyPrice * variant.pourSizeML);
         }
     }
   };
@@ -141,7 +144,7 @@ export function HistoricalTransactionForm({
       ...item,
       id: 0, // Mock ID, will be replaced in api
       lineTotal: item.quantity * item.unitPrice,
-      lineCost: item.quantity * item.buyPrice,
+      lineCost: item.buyPrice * item.quantity, // buyPrice is already per-item cost
     }));
     
     onSubmit({
@@ -199,6 +202,24 @@ export function HistoricalTransactionForm({
                                 </SelectTrigger>
                                 <SelectContent>
                                     {employees.map(emp => <SelectItem key={emp.id} value={String(emp.id)}>{emp.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        )}
+                     />
+                 </div>
+                 <div className="space-y-2">
+                     <Label>Payment Method</Label>
+                     <Controller
+                        name="paymentMethod"
+                        control={control}
+                        render={({ field }) => (
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select method" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Cash">Cash</SelectItem>
+                                    <SelectItem value="Mpesa">Mpesa</SelectItem>
                                 </SelectContent>
                             </Select>
                         )}

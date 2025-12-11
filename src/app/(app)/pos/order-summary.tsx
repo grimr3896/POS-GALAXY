@@ -57,9 +57,10 @@ export function OrderSummary({
   const [transactionDate, setTransactionDate] = useState<Date | undefined>(new Date());
 
 
-  const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
-  const tax = subtotal * 0.16;
-  const total = subtotal + tax;
+  // Tax-inclusive pricing: Total is the sum of items. Subtotal and tax are backed out.
+  const total = items.reduce((acc, item) => acc + item.totalPrice, 0);
+  const subtotal = total / 1.16;
+  const tax = total - subtotal;
   
   const handleCheckout = (paymentMethod: 'Cash' | 'Mpesa') => {
     const success = onCheckout(paymentMethod, transactionDate);
@@ -202,16 +203,16 @@ export function OrderSummary({
             
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
-              <span>Ksh {subtotal.toLocaleString()}</span>
+              <span>Ksh {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Tax (16%)</span>
-              <span>Ksh {tax.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              <span>Ksh {tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <Separator />
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
-              <span>Ksh {total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              <span>Ksh {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
           <div className="w-full border-t bg-muted/50 p-4 grid grid-cols-3 gap-2">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { OrderItem, Product, ProductPourVariant } from "@/lib/types";
@@ -77,7 +78,7 @@ export function createOrderItem(product: Product, quantity: number, type: 'bottl
       image: product.image,
       quantity: quantity,
       unitPrice: variant.sellPrice,
-      buyPrice: product.buyPrice * variant.pourSizeML, // Cost of the pour
+      buyPrice: product.buyPrice * variant.pourSizeML, // Cost of the liquid in this pour
       type: 'pour',
       pourSizeML: variant.pourSizeML,
     };
