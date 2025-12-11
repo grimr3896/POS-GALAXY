@@ -62,6 +62,12 @@ const allPermissions: { group: string, permissions: { id: Permission, label: str
     { group: 'Settings', permissions: [
         { id: 'page:settings', label: 'Access' }, { id: 'settings:read', label: 'Read' }, { id: 'settings:update', label: 'Update' }
     ]},
+    { group: 'Reports', permissions: [
+      { id: 'page:reports', label: 'Access' }
+    ]},
+    { group: 'Expenses', permissions: [
+      { id: 'page:expenses', label: 'Access' }
+    ]},
 ];
 
 const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses"];
@@ -298,5 +304,7 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
 
     

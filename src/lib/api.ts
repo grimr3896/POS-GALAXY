@@ -43,8 +43,7 @@ const saveToStorage = <T,>(key: string, value: T) => {
 
 // Initialize if not present
 const initStorage = () => {
-  if (typeof window !== "undefined") {
-    // Force reset on every load for this "clear" operation
+  if (typeof window !== "undefined" && !window.localStorage.getItem("pos_initialized")) {
     saveToStorage("users", seedUsers);
     saveToStorage("products", seedProducts);
     saveToStorage("inventory", seedInventory);
@@ -59,7 +58,7 @@ initStorage();
 // --- API Functions ---
 
 // Users
-export const getUsers = (): User[] => getFromStorage("users", seedUsers);
+export const getUsers = (): User[] => getFromStorage("users", []);
 export const findUserByCardId = (cardId: string): User | undefined => {
   const users = getUsers();
   return users.find(u => u.companyCardId === cardId);
@@ -90,8 +89,8 @@ export const deleteUser = (userId: number): void => {
 
 
 // Products & Inventory
-export const getProducts = (): Product[] => getFromStorage("products", seedProducts);
-export const getInventory = (): InventoryItem[] => getFromStorage("inventory", seedInventory);
+export const getProducts = (): Product[] => getFromStorage("products", []);
+export const getInventory = (): InventoryItem[] => getFromStorage("inventory", []);
 
 export const getProductsWithInventory = () => {
     const products = getProducts();
@@ -188,17 +187,14 @@ export const saveTransaction = (
     const inventory = getInventory();
     const allProducts = getProducts();
     
-    // The total is tax-inclusive. We need to back-calculate subtotal and tax.
     const total = items.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
-    const subtotal = total / 1.16; // Back-calculate subtotal
-    const tax = total - subtotal; // The tax amount
     
     const transactionItems: TransactionItem[] = items.map((item, index) => {
         const product = allProducts.find(p => p.id === item.productId);
         if (!product) throw new Error(`Product with ID ${item.productId} not found during transaction save.`);
         
         const unitBuyPrice = calculateLineCost(item, product);
-        const lineTotal = item.quantity * item.unitPrice; // This is tax-inclusive
+        const lineTotal = item.quantity * item.unitPrice;
         const lineCost = item.quantity * unitBuyPrice;
 
         return {
@@ -215,8 +211,7 @@ export const saveTransaction = (
     });
     
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
-    // Profit is based on the pre-tax subtotal
-    const profit = subtotal - totalCost;
+    const profit = total - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -225,8 +220,6 @@ export const saveTransaction = (
         timestamp: transactionTimestamp,
         userId,
         items: transactionItems,
-        subtotal: subtotal,
-        tax: tax,
         total: total,
         totalCost,
         profit,
@@ -370,7 +363,7 @@ export const removeSuspendedOrder = (orderId: string) => {
 };
 
 // Expenses
-export const getExpenses = (): Expense[] => getFromStorage("expenses", seedExpenses);
+export const getExpenses = (): Expense[] => getFromStorage("expenses", []);
 export const saveExpense = (expenseData: Omit<Expense, 'id'> & { id?: number }): Expense => {
     const expenses = getExpenses();
     if (expenseData.id) { // Update
@@ -413,17 +406,14 @@ export const getDashboardData = () => {
     };
 
     const dailyStats = todaysTransactions.reduce((acc, t) => {
-        // Use subtotal for revenue as it's pre-tax
-        acc.todaysSales += t.subtotal;
+        acc.todaysSales += t.total;
         acc.todaysProfit += t.profit || 0;
 
         t.items.forEach(item => {
             const productName = item.productName;
-            // Item line total is tax-inclusive, so we back-calculate the subtotal for the item
-            const itemSubtotal = item.lineTotal / 1.16;
-            const itemProfit = itemSubtotal - item.lineCost;
+            const itemProfit = item.lineTotal - item.lineCost;
             
-            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + itemSubtotal;
+            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
             acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;
         });
 
@@ -460,3 +450,5 @@ export const getDashboardData = () => {
         stockAlerts
     };
 }
+
+    
