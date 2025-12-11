@@ -45,7 +45,7 @@ const transactionItemSchema = z.object({
 const formSchema = z.object({
   transactionDate: z.date(),
   employeeId: z.coerce.number().min(1, "Employee is required."),
-  paymentMethod: z.enum(["Cash", "Card"]),
+  paymentMethod: z.enum(["Cash", "Mpesa"]),
   items: z.array(transactionItemSchema).min(1, "At least one item is required."),
 });
 
@@ -59,7 +59,7 @@ interface HistoricalTransactionFormProps {
     transactionDate: Date;
     employeeId: number;
     items: TransactionItem[];
-    paymentMethod: "Cash" | "Card";
+    paymentMethod: "Cash" | "Mpesa";
   }) => void;
   employees: User[];
   products: Product[];

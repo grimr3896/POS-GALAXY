@@ -1,4 +1,5 @@
 
+
 export type User = {
   id: number;
   name: string;
@@ -62,7 +63,7 @@ export type Transaction = {
   profit: number;
   tax: number;
   discount: number;
-  paymentMethod: "Cash" | "Card";
+  paymentMethod: "Cash" | "Mpesa";
   status: "Completed" | "Suspended" | "Cancelled" | "Reversed";
   isBackdated?: boolean;
 };

@@ -86,7 +86,7 @@ export default function ReportsPage() {
     transactionDate: Date;
     employeeId: number;
     items: TransactionItem[];
-    paymentMethod: "Cash" | "Card";
+    paymentMethod: "Cash" | "Mpesa";
   }) => {
     try {
       saveTransaction(data.employeeId, data.items, data.paymentMethod, {

@@ -57,7 +57,7 @@ export default function POSPage() {
     dispatch({ type: "REMOVE_ITEM", itemId });
   }, []);
 
-  const handleCheckout = useCallback((paymentMethod: 'Cash' | 'Card', transactionDate?: Date) => {
+  const handleCheckout = useCallback((paymentMethod: 'Cash' | 'Mpesa', transactionDate?: Date) => {
     if (!user || state.orderItems.length === 0) return false;
     try {
       const isBackdated = transactionDate && transactionDate.toDateString() !== new Date().toDateString();

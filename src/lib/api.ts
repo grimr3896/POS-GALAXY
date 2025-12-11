@@ -227,35 +227,32 @@ export const deleteProduct = (productId: number) => {
 // Transactions
 export const getTransactions = (): Transaction[] => getFromStorage("transactions", []);
 
-const calculateLineCost = (item: OrderItem | TransactionItem): number => {
-    if (item.type === 'pour' && item.pourSizeML) {
+const calculateLineCost = (item: OrderItem | TransactionItem, product: Product): number => {
+    if (product.type === 'drum' && item.pourSizeML) {
         // buyPrice for drums is per-ml.
-        return item.buyPrice * item.pourSizeML * item.quantity;
+        return product.buyPrice * item.pourSizeML * item.quantity;
     }
     // For bottles, buyPrice is per-bottle.
-    return item.buyPrice * item.quantity;
+    return product.buyPrice * item.quantity;
 };
 
 
 export const saveTransaction = (
     userId: number, 
     items: (OrderItem | TransactionItem)[], 
-    paymentMethod: 'Cash' | 'Card',
+    paymentMethod: 'Cash' | 'Mpesa',
     options: { transactionDate?: Date, isBackdated?: boolean } = {}
 ): Transaction => {
     const transactions = getTransactions();
     const inventory = getInventory();
+    const allProducts = getProducts();
     
     const transactionItems: TransactionItem[] = items.map((item, index) => {
-        const lineTotal = item.lineTotal || (item.quantity * item.unitPrice);
-        
-        // Correctly define buyPrice for the transaction item
-        const productInfo = getProducts().find(p => p.id === item.productId);
-        let transactionItemBuyPrice = item.buyPrice;
-        if(item.type === 'pour' && item.pourSizeML && productInfo?.type === 'drum'){
-            // item.buyPrice from a pour orderItem IS the per-ml cost
-            transactionItemBuyPrice = item.buyPrice * item.pourSizeML;
-        }
+        const product = allProducts.find(p => p.id === item.productId);
+        if (!product) throw new Error(`Product with ID ${item.productId} not found during transaction save.`);
+
+        const lineTotal = item.totalPrice || (item.quantity * item.unitPrice);
+        const lineCost = calculateLineCost(item, product);
 
         return {
             id: parseInt(`${Date.now()}${index}`),
@@ -263,9 +260,9 @@ export const saveTransaction = (
             productName: item.name || ('productName' in item ? item.productName : 'Unknown'),
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            buyPrice: transactionItemBuyPrice, // This is now per-unit cost
+            buyPrice: product.buyPrice, // Store the base buy price (per ml for drum, per unit for bottle)
             lineTotal: lineTotal,
-            lineCost: transactionItemBuyPrice * item.quantity, // unit cost * quantity
+            lineCost: lineCost,
             pourSizeML: item.pourSizeML,
         }
     });
@@ -293,7 +290,7 @@ export const saveTransaction = (
     // Update inventory ONLY if it's not a backdated transaction
     if (!newTransaction.isBackdated) {
         items.forEach(item => {
-            const product = getProducts().find(p => p.id === item.productId);
+            const product = allProducts.find(p => p.id === item.productId);
             if (!product) return;
 
             if (product.type === 'bottle') {

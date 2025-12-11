@@ -36,7 +36,7 @@ interface OrderSummaryProps {
   suspendedOrders: SuspendedOrder[];
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onRemoveItem: (itemId: string) => void;
-  onCheckout: (paymentMethod: 'Cash' | 'Card', transactionDate?: Date) => boolean;
+  onCheckout: (paymentMethod: 'Cash' | 'Mpesa', transactionDate?: Date) => boolean;
   onSuspend: () => void;
   onResume: (orderId: string) => void;
   onClear: () => void;
@@ -61,7 +61,7 @@ export function OrderSummary({
   const tax = subtotal * 0.16;
   const total = subtotal + tax;
   
-  const handleCheckout = (paymentMethod: 'Cash' | 'Card') => {
+  const handleCheckout = (paymentMethod: 'Cash' | 'Mpesa') => {
     const success = onCheckout(paymentMethod, transactionDate);
     if (success) {
       setLastTransaction({
@@ -218,7 +218,7 @@ export function OrderSummary({
                 <SquareArrowDown className="mr-2 h-4 w-4"/>
                 Suspend
              </Button>
-             <Button onClick={() => handleCheckout('Card')} className="col-span-1">Card</Button>
+             <Button onClick={() => handleCheckout('Mpesa')} className="col-span-1">Mpesa</Button>
              <Button onClick={() => handleCheckout('Cash')} className="col-span-1 bg-accent hover:bg-accent/90">Cash</Button>
           </div>
         </CardFooter>
