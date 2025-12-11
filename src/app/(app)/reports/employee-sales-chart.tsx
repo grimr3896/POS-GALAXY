@@ -33,7 +33,7 @@ export function EmployeeSalesChart({ data, users, isLoading }: EmployeeSalesChar
     
     const salesByEmployee = data.reduce((acc, transaction) => {
       const userId = transaction.userId;
-      acc[userId] = (acc[userId] || 0) + transaction.subtotal;
+      acc[userId] = (acc[userId] || 0) + transaction.total;
       return acc;
     }, {} as Record<number, number>);
 

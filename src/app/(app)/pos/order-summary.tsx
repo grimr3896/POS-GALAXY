@@ -57,25 +57,22 @@ export function OrderSummary({
   const [transactionDate, setTransactionDate] = useState<Date | undefined>(new Date());
 
 
-  // Tax-inclusive pricing: Total is the sum of items. Subtotal and tax are backed out.
   const total = items.reduce((acc, item) => acc + item.totalPrice, 0);
-  const subtotal = total / 1.16;
-  const tax = total - subtotal;
   
   const handleCheckout = (paymentMethod: 'Cash' | 'Mpesa') => {
     const success = onCheckout(paymentMethod, transactionDate);
     if (success) {
+      // Create a minimal transaction object for the receipt
+      const totalCost = items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0);
       setLastTransaction({
         id: `TXN-${Date.now()}`,
         timestamp: (transactionDate || new Date()).toISOString(),
         userId: 0, // Should get from auth user
         items: items.map((item, idx) => ({ ...item, id: idx, productName: item.name, lineTotal: item.totalPrice, unitPrice: item.unitPrice, lineCost: item.buyPrice * item.quantity})),
-        subtotal: subtotal,
-        tax: tax,
         total: total,
+        totalCost: totalCost,
+        profit: total - totalCost,
         discount: 0,
-        totalCost: items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0),
-        profit: subtotal - items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0),
         paymentMethod,
         status: "Completed",
       });
@@ -200,16 +197,7 @@ export function OrderSummary({
             </Collapsible>
             
             <Separator />
-            
-            <div className="flex justify-between text-sm">
-              <span>Subtotal</span>
-              <span>Ksh {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Tax (16%)</span>
-              <span>Ksh {tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-            <Separator />
+
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
               <span>Ksh {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>

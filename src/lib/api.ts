@@ -30,7 +30,7 @@ const seedProducts: Product[] = [
     image: PlaceHolderImages.find(p => p.id === 'whiskey-drum')?.imageUrl || '', 
     type: "drum", 
     unit: "L", 
-    buyPrice: 0.4, // Price per ML (e.g. 20,000 KSH for 50L drum = 0.4 KSH/ml)
+    buyPrice: 0.4, // Price per ML
     sellPrice: 0, 
     thresholdQuantity: 5000, // 5L
     pourVariants: [
@@ -46,7 +46,7 @@ const seedProducts: Product[] = [
     image: PlaceHolderImages.find(p => p.id === 'vodka-drum')?.imageUrl || '', 
     type: "drum", 
     unit: "L", 
-    buyPrice: 0.3, // Price per ML (e.g. 4,500 KSH for 15L drum = 0.3 KSH/ml)
+    buyPrice: 0.3, // Price per ML
     sellPrice: 0, 
     thresholdQuantity: 3000, // 3L
     pourVariants: [
@@ -229,10 +229,8 @@ export const getTransactions = (): Transaction[] => getFromStorage("transactions
 
 const calculateLineCost = (item: OrderItem | TransactionItem, product: Product): number => {
     if (product.type === 'drum' && item.pourSizeML) {
-        // Cost of a pour = (price per ml) * (size of pour in ml) * quantity of pours
         return product.buyPrice * item.pourSizeML * item.quantity;
     }
-    // Cost of a bottle = (price per bottle) * quantity of bottles
     return product.buyPrice * item.quantity;
 };
 
@@ -251,7 +249,6 @@ export const saveTransaction = (
         const product = allProducts.find(p => p.id === item.productId);
         if (!product) throw new Error(`Product with ID ${item.productId} not found during transaction save.`);
         
-        // This is the tax-inclusive price for the line item
         const lineTotal = item.totalPrice || (item.quantity * item.unitPrice);
         const lineCost = calculateLineCost(item, product);
 
@@ -269,13 +266,8 @@ export const saveTransaction = (
     });
     
     const total = transactionItems.reduce((acc, item) => acc + item.lineTotal, 0);
-    // Back-calculate subtotal and tax from the tax-inclusive total
-    const subtotal = total / 1.16;
-    const tax = total - subtotal;
-    
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
-    // Profit is based on the pre-tax subtotal
-    const profit = subtotal - totalCost;
+    const profit = total - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -284,8 +276,6 @@ export const saveTransaction = (
         timestamp: transactionTimestamp,
         userId,
         items: transactionItems,
-        subtotal,
-        tax,
         total,
         totalCost,
         profit,
@@ -470,15 +460,14 @@ export const getDashboardData = () => {
     };
 
     const dailyStats = todaysTransactions.reduce((acc, t) => {
-        acc.todaysSales += t.subtotal;
+        acc.todaysSales += t.total;
         acc.todaysProfit += t.profit || 0;
 
         t.items.forEach(item => {
             const productName = item.productName;
-            const itemSubtotal = item.lineTotal / 1.16;
-            const itemProfit = itemSubtotal - item.lineCost;
+            const itemProfit = item.lineTotal - item.lineCost;
             
-            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + itemSubtotal;
+            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
             acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;
         });
 

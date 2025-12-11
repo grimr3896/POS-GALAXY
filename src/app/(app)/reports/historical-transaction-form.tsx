@@ -95,13 +95,10 @@ export function HistoricalTransactionForm({
 
   const watchItems = watch("items");
 
-  // Tax-inclusive pricing: Total is the sum of items. Subtotal and tax are backed out for display.
   const total = watchItems.reduce(
     (acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0),
     0
   );
-  const subtotal = total / 1.16;
-  const tax = total - subtotal;
 
   const handleProductChange = (index: number, productId: string) => {
     const numericProductId = parseInt(productId);
@@ -302,14 +299,6 @@ export function HistoricalTransactionForm({
                 <>
                 <Separator />
                 <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span>Ksh {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tax (16%) (for display)</span>
-                        <span>Ksh {tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
                     <div className="flex justify-between font-semibold text-base">
                         <span>Total</span>
                         <span>Ksh {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>

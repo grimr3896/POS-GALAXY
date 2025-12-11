@@ -87,14 +87,6 @@ export function TransactionDetailModal({
             <Separator />
 
              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>{formatCurrency(transaction.subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                <span>Tax:</span>
-                <span>{formatCurrency(transaction.tax)}</span>
-                </div>
                 <div className="flex justify-between font-bold">
                 <span>TOTAL:</span>
                 <span>{formatCurrency(transaction.total)}</span>

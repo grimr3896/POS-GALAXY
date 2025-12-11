@@ -1,6 +1,7 @@
 
 "use client";
 
+import React from 'react';
 import {
   Card,
   CardContent,
@@ -40,7 +41,6 @@ import { Check, X } from "lucide-react";
 const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
   currency: z.string(),
-  taxRate: z.coerce.number().min(0).max(100),
   idleTimeout: z.coerce.number().min(0),
 });
 
@@ -79,7 +79,6 @@ export default function SettingsPage() {
     defaultValues: {
       appName: "Galaxy Inn",
       currency: "KSH",
-      taxRate: 16,
       idleTimeout: 300,
     },
   });
@@ -130,11 +129,6 @@ export default function SettingsPage() {
                   </Select>
                 )}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="taxRate">Tax Rate (%)</Label>
-              <Input id="taxRate" type="number" {...register("taxRate")} disabled={!canUpdateSettings}/>
-              {errors.taxRate && <p className="text-sm text-destructive">{errors.taxRate.message}</p>}
             </div>
           </div>
         </CardContent>
