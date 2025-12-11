@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -87,11 +88,27 @@ export function TransactionDetailModal({
             <Separator />
 
              <div className="space-y-2 text-sm">
-                <div className="flex justify-between font-bold">
-                <span>TOTAL:</span>
-                <span>{formatCurrency(transaction.total)}</span>
+                <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>{formatCurrency(transaction.subtotal)}</span>
                 </div>
-                 <div className="flex justify-between text-green-600">
+                 <div className="flex justify-between">
+                    <span>Tax:</span>
+                    <span>{formatCurrency(transaction.tax)}</span>
+                </div>
+                <div className="flex justify-between font-bold mt-1">
+                    <span>TOTAL:</span>
+                    <span>{formatCurrency(transaction.total)}</span>
+                </div>
+                 <div className="flex justify-between text-muted-foreground mt-2">
+                    <span>Amount Paid:</span>
+                    <span>{formatCurrency(transaction.amountReceived)}</span>
+                </div>
+                 <div className="flex justify-between text-muted-foreground">
+                    <span>Change:</span>
+                    <span>{formatCurrency(transaction.change)}</span>
+                </div>
+                 <div className="flex justify-between text-green-600 font-medium mt-1">
                 <span>Profit:</span>
                 <span>{formatCurrency(transaction.profit)}</span>
                 </div>

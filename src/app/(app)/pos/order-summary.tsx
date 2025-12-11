@@ -28,7 +28,6 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
-import { ReceiptModal } from "./receipt-modal";
 
 
 interface OrderSummaryProps {
@@ -36,7 +35,7 @@ interface OrderSummaryProps {
   suspendedOrders: SuspendedOrder[];
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onRemoveItem: (itemId: string) => void;
-  onCheckout: (paymentMethod: 'Cash' | 'Mpesa', transactionDate?: Date) => boolean;
+  onCheckoutRequest: () => void;
   onSuspend: () => void;
   onResume: (orderId: string) => void;
   onClear: () => void;
@@ -47,39 +46,18 @@ export function OrderSummary({
   suspendedOrders,
   onUpdateQuantity,
   onRemoveItem,
-  onCheckout,
+  onCheckoutRequest,
   onSuspend,
   onResume,
   onClear,
 }: OrderSummaryProps) {
-  const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null);
-  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [transactionDate, setTransactionDate] = useState<Date | undefined>(new Date());
-
-
-  const total = items.reduce((acc, item) => acc + item.totalPrice, 0);
   
-  const handleCheckout = (paymentMethod: 'Cash' | 'Mpesa') => {
-    const success = onCheckout(paymentMethod, transactionDate);
-    if (success) {
-      // Create a minimal transaction object for the receipt
-      const totalCost = items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0);
-      setLastTransaction({
-        id: `TXN-${Date.now()}`,
-        timestamp: (transactionDate || new Date()).toISOString(),
-        userId: 0, // Should get from auth user
-        items: items.map((item, idx) => ({ ...item, id: idx, productName: item.name, lineTotal: item.totalPrice, unitPrice: item.unitPrice, lineCost: item.buyPrice * item.quantity})),
-        total: total,
-        totalCost: totalCost,
-        profit: total - totalCost,
-        discount: 0,
-        paymentMethod,
-        status: "Completed",
-      });
-      setIsReceiptOpen(true);
-    }
-  };
+  const total = items.reduce((acc, item) => acc + item.totalPrice, 0);
 
+  // Since prices are tax-inclusive, we back-calculate the subtotal and tax
+  const subtotal = total / 1.16;
+  const tax = total - subtotal;
 
   return (
     <>
@@ -161,40 +139,14 @@ export function OrderSummary({
       {items.length > 0 && (
         <CardFooter className="flex-col !p-0">
           <div className="w-full p-6 space-y-2">
-            <Collapsible>
-                <CollapsibleTrigger className="flex justify-between items-center w-full text-sm font-medium text-muted-foreground hover:text-foreground">
-                    <span>Advanced</span>
-                    <ChevronsUpDown className="h-4 w-4" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="py-4 space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="transaction-date">Transaction Date</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <Button
-                                id="transaction-date"
-                                variant={"outline"}
-                                className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !transactionDate && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {transactionDate ? format(transactionDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={transactionDate}
-                                onSelect={setTransactionDate}
-                                initialFocus
-                            />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                </CollapsibleContent>
-            </Collapsible>
+            <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>Ksh {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+             <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tax (16%)</span>
+                <span>Ksh {tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
             
             <Separator />
 
@@ -203,18 +155,14 @@ export function OrderSummary({
               <span>Ksh {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
-          <div className="w-full border-t bg-muted/50 p-4 grid grid-cols-3 gap-2">
-             <Button variant="outline" onClick={onSuspend} className="col-span-1">
-                <SquareArrowDown className="mr-2 h-4 w-4"/>
-                Suspend
+          <div className="w-full border-t bg-muted/50 p-4">
+             <Button onClick={onCheckoutRequest} className="w-full" size="lg">
+                Proceed to Payment
              </Button>
-             <Button onClick={() => handleCheckout('Mpesa')} className="col-span-1">Mpesa</Button>
-             <Button onClick={() => handleCheckout('Cash')} className="col-span-1 bg-accent hover:bg-accent/90">Cash</Button>
           </div>
         </CardFooter>
       )}
     </Card>
-    {lastTransaction && <ReceiptModal transaction={lastTransaction} isOpen={isReceiptOpen} onOpenChange={setIsReceiptOpen} />}
     </>
   );
 }

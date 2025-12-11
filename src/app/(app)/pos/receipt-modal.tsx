@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -32,7 +33,7 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
       const printWindow = window.open('', '', 'height=600,width=800');
       if(printWindow) {
         printWindow.document.write('<html><head><title>Print Receipt</title>');
-        printWindow.document.write('<style>body{font-family:monospace; margin: 20px;} table{width:100%; border-collapse: collapse;} td,th{padding: 5px; text-align: left;} .right{text-align: right;} .center{text-align:center;}</style>');
+        printWindow.document.write('<style>body{font-family:monospace; margin: 20px; font-size: 12px;} table{width:100%; border-collapse: collapse;} td,th{padding: 5px; text-align: left;} .right{text-align: right;} .center{text-align:center;} .bold{font-weight:bold;}</style>');
         printWindow.document.write('</head><body>');
         printWindow.document.write(printContent.innerHTML);
         printWindow.document.write('</body></html>');
@@ -73,6 +74,10 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
               <span>Cashier:</span>
               <span>{user?.name}</span>
             </div>
+             <div className="flex justify-between">
+              <span>Payment Method:</span>
+              <span>{transaction.paymentMethod}</span>
+            </div>
           </div>
           <Separator />
           <div className="my-4 space-y-2">
@@ -89,10 +94,31 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
             ))}
           </div>
           <Separator />
-          <div className="mt-4 flex justify-between font-bold text-base">
-            <span>TOTAL:</span>
-            <span>Ksh {transaction.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
+           <div className="my-4 space-y-1 text-sm">
+                <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>Ksh {transaction.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span>Tax (16%):</span>
+                    <span>Ksh {transaction.tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between font-bold text-base mt-1">
+                    <span>TOTAL:</span>
+                    <span>Ksh {transaction.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+            </div>
+          <Separator />
+          <div className="my-4 space-y-1 text-sm">
+                <div className="flex justify-between">
+                    <span>Amount Paid:</span>
+                    <span>Ksh {transaction.amountReceived.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                 <div className="flex justify-between font-bold">
+                    <span>Change:</span>
+                    <span>Ksh {transaction.change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+            </div>
           <div className="mt-6 text-center text-xs text-muted-foreground">
             Thank you for your business!
           </div>

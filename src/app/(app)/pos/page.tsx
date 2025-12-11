@@ -4,11 +4,13 @@
 import { useState, useReducer, useEffect, useCallback } from "react";
 import { ProductGrid } from "./product-grid";
 import { OrderSummary } from "./order-summary";
-import { getProductsWithInventory, saveTransaction, getSuspendedOrders, saveSuspendedOrder, removeSuspendedOrder } from "@/lib/api";
-import type { Product, InventoryItem, OrderItem, SuspendedOrder } from "@/lib/types";
+import { getProductsWithInventory, saveTransaction, getSuspendedOrders, saveSuspendedOrder, removeSuspendedOrder, type PaymentDetails } from "@/lib/api";
+import type { Product, InventoryItem, OrderItem, SuspendedOrder, Transaction } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { posReducer } from "./pos-helpers";
+import { PaymentModal } from "./payment-modal";
+import { ReceiptModal } from "./receipt-modal";
 
 export default function POSPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
@@ -17,6 +19,10 @@ export default function POSPage() {
   const [suspendedOrders, setSuspendedOrders] = useState<SuspendedOrder[]>([]);
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -57,18 +63,29 @@ export default function POSPage() {
     dispatch({ type: "REMOVE_ITEM", itemId });
   }, []);
 
-  const handleCheckout = useCallback((paymentMethod: 'Cash' | 'Mpesa', transactionDate?: Date) => {
+  const handleCheckoutRequest = () => {
+    if (state.orderItems.length > 0) {
+      setIsPaymentModalOpen(true);
+    }
+  };
+
+  const handlePaymentComplete = useCallback((paymentDetails: PaymentDetails, transactionDate?: Date) => {
     if (!user || state.orderItems.length === 0) return false;
     try {
       const isBackdated = transactionDate && transactionDate.toDateString() !== new Date().toDateString();
-      saveTransaction(user.id, state.orderItems, paymentMethod, { transactionDate, isBackdated });
+      const transaction = saveTransaction(user.id, state.orderItems, paymentDetails, { transactionDate, isBackdated });
+      
+      setLastTransaction(transaction);
+      setIsReceiptModalOpen(true);
+      setIsPaymentModalOpen(false);
       dispatch({ type: "CLEAR_ORDER" });
+
       if (!isBackdated) {
         fetchProducts(); // Refetch to update inventory display only if not backdated
       }
       toast({
         title: "Success",
-        description: `Transaction completed with ${paymentMethod}.`,
+        description: `Transaction completed with ${paymentDetails.paymentMethod}.`,
       });
       return true;
     } catch (error) {
@@ -119,30 +136,48 @@ export default function POSPage() {
 
   const drumProducts = products.filter(p => p.type === 'drum');
   const bottleProducts = products.filter(p => p.type === 'bottle');
+  const orderTotal = state.orderItems.reduce((acc, item) => acc + item.totalPrice, 0);
 
   if (!isClient) {
     return null; // or a loading skeleton
   }
 
   return (
-    <div className="grid h-[calc(100vh-theme(spacing.28))] flex-1 grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="flex flex-col gap-6 lg:col-span-2">
-        <ProductGrid 
-          bottleProducts={bottleProducts}
-          drumProducts={drumProducts} 
-          onAddItem={handleAddItem} 
+    <>
+      <div className="grid h-[calc(100vh-theme(spacing.28))] flex-1 grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="flex flex-col gap-6 lg:col-span-2">
+          <ProductGrid 
+            bottleProducts={bottleProducts}
+            drumProducts={drumProducts} 
+            onAddItem={handleAddItem} 
+          />
+        </div>
+        <OrderSummary
+          items={state.orderItems}
+          suspendedOrders={suspendedOrders}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemoveItem={handleRemoveItem}
+          onCheckoutRequest={handleCheckoutRequest}
+          onSuspend={handleSuspendOrder}
+          onResume={handleResumeOrder}
+          onClear={handleClearOrder}
         />
       </div>
-      <OrderSummary
-        items={state.orderItems}
-        suspendedOrders={suspendedOrders}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleCheckout}
-        onSuspend={handleSuspendOrder}
-        onResume={handleResumeOrder}
-        onClear={handleClearOrder}
+
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onOpenChange={setIsPaymentModalOpen}
+        totalAmount={orderTotal}
+        onPaymentComplete={handlePaymentComplete}
       />
-    </div>
+      
+      {lastTransaction && (
+        <ReceiptModal
+          transaction={lastTransaction}
+          isOpen={isReceiptModalOpen}
+          onOpenChange={setIsReceiptModalOpen}
+        />
+      )}
+    </>
   );
 }

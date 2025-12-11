@@ -1,8 +1,8 @@
 
+
 "use client";
 
 import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant } from "./types";
-import { PlaceHolderImages } from "./placeholder-images";
 import { getUUID } from "@/lib/utils";
 
 // --- Seed Data ---
@@ -43,14 +43,14 @@ const saveToStorage = <T,>(key: string, value: T) => {
 
 // Initialize if not present
 const initStorage = () => {
-  if (typeof window !== "undefined" && !window.localStorage.getItem("pos_initialized")) {
+    if (typeof window !== "undefined" && !window.localStorage.getItem("pos_initialized_v2")) {
     saveToStorage("users", seedUsers);
     saveToStorage("products", seedProducts);
     saveToStorage("inventory", seedInventory);
     saveToStorage("transactions", []);
     saveToStorage("suspended_orders", []);
     saveToStorage("expenses", seedExpenses);
-    window.localStorage.setItem("pos_initialized", "true");
+    window.localStorage.setItem("pos_initialized_v2", "true");
   }
 };
 initStorage();
@@ -177,10 +177,15 @@ const calculateLineCost = (item: OrderItem | TransactionItem, product: Product):
     return product.buyPrice;
 };
 
+export interface PaymentDetails {
+    amountReceived: number;
+    paymentMethod: 'Cash' | 'Mpesa';
+}
+
 export const saveTransaction = (
     userId: number, 
     items: (OrderItem | TransactionItem)[], 
-    paymentMethod: 'Cash' | 'Mpesa',
+    paymentDetails: PaymentDetails,
     options: { transactionDate?: Date, isBackdated?: boolean } = {}
 ): Transaction => {
     const transactions = getTransactions();
@@ -188,6 +193,9 @@ export const saveTransaction = (
     const allProducts = getProducts();
     
     const total = items.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
+    // Tax is included in sellPrice. We back-calculate it.
+    const subtotal = total / 1.16;
+    const tax = total - subtotal;
     
     const transactionItems: TransactionItem[] = items.map((item, index) => {
         const product = allProducts.find(p => p.id === item.productId);
@@ -211,7 +219,8 @@ export const saveTransaction = (
     });
     
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
-    const profit = total - totalCost;
+    // Profit is based on the pre-tax subtotal
+    const profit = subtotal - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -220,11 +229,15 @@ export const saveTransaction = (
         timestamp: transactionTimestamp,
         userId,
         items: transactionItems,
+        subtotal: subtotal,
+        tax: tax,
         total: total,
+        amountReceived: paymentDetails.amountReceived,
+        change: paymentDetails.amountReceived - total,
         totalCost,
         profit,
         discount: 0,
-        paymentMethod,
+        paymentMethod: paymentDetails.paymentMethod,
         status: "Completed",
         isBackdated: options.isBackdated || false,
     };
@@ -406,11 +419,12 @@ export const getDashboardData = () => {
     };
 
     const dailyStats = todaysTransactions.reduce((acc, t) => {
-        acc.todaysSales += t.total;
-        acc.todaysProfit += t.profit || 0;
+        acc.todaysSales += t.total; // This is the gross revenue including tax
+        acc.todaysProfit += t.profit || 0; // This is subtotal - cost
 
         t.items.forEach(item => {
             const productName = item.productName;
+            // Item profit is sell price (inc. tax) - buy price
             const itemProfit = item.lineTotal - item.lineCost;
             
             acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
@@ -450,5 +464,3 @@ export const getDashboardData = () => {
         stockAlerts
     };
 }
-
-    

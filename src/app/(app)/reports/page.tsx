@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ReportFilters, type ReportFiltersState } from "./report-filters";
-import { getUsers, getTransactions, getProducts, saveTransaction } from "@/lib/api";
+import { getUsers, getTransactions, getProducts, saveTransaction, PaymentDetails } from "@/lib/api";
 import type { User, Transaction, Product, TransactionItem } from "@/lib/types";
 import { GeneratedReport } from "./generated-report";
 import { useToast } from "@/hooks/use-toast";
@@ -87,9 +87,14 @@ export default function ReportsPage() {
     employeeId: number;
     items: TransactionItem[];
     paymentMethod: "Cash" | "Mpesa";
+    amountReceived: number;
   }) => {
     try {
-      saveTransaction(data.employeeId, data.items, data.paymentMethod, {
+      const paymentDetails: PaymentDetails = {
+          amountReceived: data.amountReceived,
+          paymentMethod: data.paymentMethod
+      };
+      saveTransaction(data.employeeId, data.items, paymentDetails, {
         transactionDate: data.transactionDate,
         isBackdated: true,
       });

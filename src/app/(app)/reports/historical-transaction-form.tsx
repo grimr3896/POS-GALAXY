@@ -46,7 +46,14 @@ const formSchema = z.object({
   transactionDate: z.date(),
   employeeId: z.coerce.number().min(1, "Employee is required."),
   paymentMethod: z.enum(["Cash", "Mpesa"]),
+  amountReceived: z.coerce.number().positive(),
   items: z.array(transactionItemSchema).min(1, "At least one item is required."),
+}).refine(data => {
+    const total = data.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+    return data.amountReceived >= total;
+}, {
+    message: "Amount received must be greater than or equal to the total.",
+    path: ["amountReceived"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -60,6 +67,7 @@ interface HistoricalTransactionFormProps {
     employeeId: number;
     items: TransactionItem[];
     paymentMethod: "Cash" | "Mpesa";
+    amountReceived: number;
   }) => void;
   employees: User[];
   products: Product[];
@@ -85,6 +93,7 @@ export function HistoricalTransactionForm({
       transactionDate: new Date(),
       paymentMethod: "Cash",
       items: [],
+      amountReceived: 0,
     },
   });
 
@@ -99,6 +108,10 @@ export function HistoricalTransactionForm({
     (acc, item) => acc + (item.quantity || 0) * (item.unitPrice || 0),
     0
   );
+
+  useEffect(() => {
+    setValue("amountReceived", total);
+  }, [total, setValue]);
 
   const handleProductChange = (index: number, productId: string) => {
     const numericProductId = parseInt(productId);
@@ -146,8 +159,11 @@ export function HistoricalTransactionForm({
     }));
     
     onSubmit({
-      ...data,
+      transactionDate: data.transactionDate,
+      employeeId: data.employeeId,
       items: finalItems,
+      paymentMethod: data.paymentMethod,
+      amountReceived: data.amountReceived,
     });
   }
 
@@ -298,10 +314,15 @@ export function HistoricalTransactionForm({
                {watchItems.length > 0 && (
                 <>
                 <Separator />
-                <div className="space-y-2">
-                    <div className="flex justify-between font-semibold text-base">
+                <div className="space-y-4">
+                     <div className="flex justify-between font-semibold text-base">
                         <span>Total</span>
                         <span>Ksh {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="amountReceived">Amount Received</Label>
+                        <Input id="amountReceived" type="number" {...register('amountReceived')} />
+                        {errors.amountReceived && <p className="text-sm text-destructive">{errors.amountReceived.message}</p>}
                     </div>
                 </div>
                 </>

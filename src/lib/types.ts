@@ -58,7 +58,11 @@ export type Transaction = {
   timestamp: string;
   userId: number;
   items: TransactionItem[];
+  subtotal: number;
+  tax: number;
   total: number;
+  amountReceived: number;
+  change: number;
   totalCost: number;
   profit: number;
   discount: number;
