@@ -229,10 +229,8 @@ export const getTransactions = (): Transaction[] => getFromStorage("transactions
 
 const calculateLineCost = (item: OrderItem | TransactionItem, product: Product): number => {
     if (product.type === 'drum' && item.pourSizeML) {
-        // buyPrice for drums is per-ml.
         return product.buyPrice * item.pourSizeML * item.quantity;
     }
-    // For bottles, buyPrice is per-bottle.
     return product.buyPrice * item.quantity;
 };
 
@@ -260,15 +258,18 @@ export const saveTransaction = (
             productName: item.name || ('productName' in item ? item.productName : 'Unknown'),
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            buyPrice: product.buyPrice, // Store the base buy price (per ml for drum, per unit for bottle)
+            buyPrice: product.buyPrice,
             lineTotal: lineTotal,
             lineCost: lineCost,
             pourSizeML: item.pourSizeML,
         }
     });
     
-    const totalAmount = transactionItems.reduce((acc, item) => acc + item.lineTotal, 0);
+    const subtotal = transactionItems.reduce((acc, item) => acc + item.lineTotal, 0);
+    const tax = subtotal * 0.16;
+    const total = subtotal + tax;
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
+    const profit = subtotal - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -277,10 +278,11 @@ export const saveTransaction = (
         timestamp: transactionTimestamp,
         userId,
         items: transactionItems,
-        totalAmount,
+        subtotal,
+        tax,
+        total,
         totalCost,
-        profit: totalAmount - totalCost,
-        tax: totalAmount * 0.16, // 16% tax
+        profit,
         discount: 0,
         paymentMethod,
         status: "Completed",
@@ -462,7 +464,7 @@ export const getDashboardData = () => {
     };
 
     const dailyStats = todaysTransactions.reduce((acc, t) => {
-        acc.todaysSales += t.totalAmount;
+        acc.todaysSales += t.subtotal;
         acc.todaysProfit += t.profit || 0;
 
         t.items.forEach(item => {

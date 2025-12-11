@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -32,7 +33,7 @@ export function EmployeeSalesChart({ data, users, isLoading }: EmployeeSalesChar
     
     const salesByEmployee = data.reduce((acc, transaction) => {
       const userId = transaction.userId;
-      acc[userId] = (acc[userId] || 0) + transaction.totalAmount;
+      acc[userId] = (acc[userId] || 0) + transaction.subtotal;
       return acc;
     }, {} as Record<number, number>);
 

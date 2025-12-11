@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -16,7 +17,7 @@ interface GeneratedReportProps {
 
 export function GeneratedReport({ data, users }: GeneratedReportProps) {
   const { totalRevenue, totalProfit, totalTransactions, topSellers } = useMemo(() => {
-    const totalRevenue = data.reduce((acc, t) => acc + t.totalAmount, 0);
+    const totalRevenue = data.reduce((acc, t) => acc + t.subtotal, 0);
     const totalProfit = data.reduce((acc, t) => acc + (t.profit || 0), 0);
     const totalTransactions = data.length;
 

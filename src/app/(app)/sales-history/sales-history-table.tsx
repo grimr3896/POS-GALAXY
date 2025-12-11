@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -106,7 +107,7 @@ export function SalesHistoryTable({ transactions, users, isLoading, onViewTransa
                             {formatItems(t.items).truncated}
                         </span>
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(t.totalAmount)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(t.total)}</TableCell>
                     <TableCell className={cn("text-right", (t.profit || 0) < 0 && "text-destructive")}>
                         {formatCurrency(t.profit)}
                     </TableCell>

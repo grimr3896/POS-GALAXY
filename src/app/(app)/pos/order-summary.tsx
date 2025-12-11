@@ -69,11 +69,12 @@ export function OrderSummary({
         timestamp: (transactionDate || new Date()).toISOString(),
         userId: 0, // Should get from auth user
         items: items.map((item, idx) => ({ ...item, id: idx, productName: item.name, lineTotal: item.totalPrice, unitPrice: item.unitPrice, lineCost: item.buyPrice * item.quantity})),
-        totalAmount: total,
-        tax,
+        subtotal: subtotal,
+        tax: tax,
+        total: total,
         discount: 0,
         totalCost: items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0),
-        profit: total - items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0),
+        profit: subtotal - items.reduce((acc, item) => acc + item.buyPrice * item.quantity, 0),
         paymentMethod,
         status: "Completed",
       });

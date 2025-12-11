@@ -58,10 +58,11 @@ export type Transaction = {
   timestamp: string;
   userId: number;
   items: TransactionItem[];
-  totalAmount: number;
+  subtotal: number;
+  tax: number;
+  total: number;
   totalCost: number;
   profit: number;
-  tax: number;
   discount: number;
   paymentMethod: "Cash" | "Mpesa";
   status: "Completed" | "Suspended" | "Cancelled" | "Reversed";
