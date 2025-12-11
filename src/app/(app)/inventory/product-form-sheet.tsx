@@ -242,24 +242,22 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                             <Input {...register(`pourVariants.${index}.name`)} placeholder="e.g. 1/4 L" />
                         </div>
                         <div className="col-span-6 sm:col-span-3">
-                           <Controller
+                            <Label>Size (L)</Label>
+                             <Controller
                                 name={`pourVariants.${index}.pourSizeML`}
                                 control={control}
                                 render={({ field: { onChange, value, ...restField } }) => (
-                                    <>
-                                        <Label>Size (L)</Label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={value > 0 ? value / 1000 : ""}
-                                            onChange={(e) => {
-                                                const valInLiters = parseFloat(e.target.value);
-                                                onChange(isNaN(valInLiters) ? 0 : valInLiters * 1000);
-                                            }}
-                                            {...restField}
-                                            placeholder="e.g. 0.25"
-                                        />
-                                    </>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={value > 0 ? value / 1000 : ""}
+                                        onChange={(e) => {
+                                            const valInLiters = parseFloat(e.target.value);
+                                            onChange(isNaN(valInLiters) ? 0 : valInLiters * 1000);
+                                        }}
+                                        {...restField}
+                                        placeholder="e.g. 0.25"
+                                    />
                                 )}
                             />
                         </div>
