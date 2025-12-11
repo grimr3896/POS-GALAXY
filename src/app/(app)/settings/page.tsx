@@ -29,14 +29,14 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/permissions";
 import { rolePermissions } from "@/lib/types";
 import type { Role, Permission } from "@/lib/types";
-import { Check, X } from "lucide-react";
+import { Check, X, Download, Upload } from "lucide-react";
 
 const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
@@ -64,10 +64,13 @@ const allPermissions: { group: string, permissions: { id: Permission, label: str
     ]},
 ];
 
+const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses"];
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const canUpdateSettings = hasPermission(user, 'settings:update');
+  const restoreInputRef = React.useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -94,45 +97,144 @@ export default function SettingsPage() {
   
   const roles = Object.keys(rolePermissions) as Role[];
 
+  const handleBackup = () => {
+    try {
+        const backupData: Record<string, any> = {};
+        DATA_KEYS.forEach(key => {
+            const data = localStorage.getItem(key);
+            if (data) {
+                backupData[key] = JSON.parse(data);
+            }
+        });
+
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const date = new Date().toISOString().split('T')[0];
+        a.download = `galaxy-pos-backup-${date}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({ title: "Backup Successful", description: "All data has been downloaded." });
+    } catch (error) {
+        console.error("Backup failed:", error);
+        toast({ variant: "destructive", title: "Backup Failed", description: "Could not export data." });
+    }
+  };
+
+  const handleRestore = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const content = e.target?.result;
+            if (typeof content !== 'string') throw new Error("Invalid file content");
+            
+            const restoredData = JSON.parse(content);
+            
+            let restoredKeys = 0;
+            DATA_KEYS.forEach(key => {
+                if (restoredData[key]) {
+                    localStorage.setItem(key, JSON.stringify(restoredData[key]));
+                    restoredKeys++;
+                }
+            });
+
+            if (restoredKeys > 0) {
+                 toast({
+                    title: "Restore Successful",
+                    description: "Data has been restored. Please reload the page to see the changes.",
+                    duration: 10000,
+                 });
+                 // Reset file input
+                 if(restoreInputRef.current) restoreInputRef.current.value = "";
+            } else {
+                throw new Error("Backup file does not contain valid data.");
+            }
+
+        } catch (error: any) {
+             console.error("Restore failed:", error);
+             toast({ variant: "destructive", title: "Restore Failed", description: error.message || "Could not import data." });
+        }
+    };
+    reader.readAsText(file);
+  };
+
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>General Settings</CardTitle>
-          <CardDescription>
-            Manage general application settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="appName">Application Name</Label>
-            <Input id="appName" {...register("appName")} disabled={!canUpdateSettings} />
-            {errors.appName && <p className="text-sm text-destructive">{errors.appName.message}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Card>
+          <CardHeader>
+            <CardTitle>General Settings</CardTitle>
+            <CardDescription>
+              Manage general application settings.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Controller
-                name="currency"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value} disabled={!canUpdateSettings}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="KSH">KSH (Kenyan Shilling)</SelectItem>
-                      <SelectItem value="USD">USD (US Dollar)</SelectItem>
-                      <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              <Label htmlFor="appName">Application Name</Label>
+              <Input id="appName" {...register("appName")} disabled={!canUpdateSettings} />
+              {errors.appName && <p className="text-sm text-destructive">{errors.appName.message}</p>}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Controller
+                  name="currency"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!canUpdateSettings}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="KSH">KSH (Kenyan Shilling)</SelectItem>
+                        <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                        <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+             {canUpdateSettings && (
+                <div className="flex justify-end pt-4">
+                    <Button type="submit">Save Settings</Button>
+                </div>
+            )}
+          </CardContent>
+        </Card>
+      </form>
+
+      {canUpdateSettings && (
+         <Card>
+            <CardHeader>
+                <CardTitle>Data Management</CardTitle>
+                <CardDescription>Backup all application data or restore it from a file.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row gap-4">
+                 <Button onClick={handleBackup}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Backup All Data
+                </Button>
+                <Input
+                    ref={restoreInputRef}
+                    id="restore-file"
+                    type="file"
+                    className="hidden"
+                    accept=".json"
+                    onChange={handleRestore}
+                />
+                <Button variant="outline" onClick={() => restoreInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Restore from Backup
+                </Button>
+            </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -186,14 +288,15 @@ export default function SettingsPage() {
                     </TableBody>
                 </Table>
             </div>
+             {canUpdateSettings && (
+                <div className="flex justify-end pt-4">
+                    <Button type="submit">Save Security Settings</Button>
+                </div>
+            )}
         </CardContent>
       </Card>
-
-      {canUpdateSettings && (
-        <div className="flex justify-end">
-          <Button type="submit">Save All Settings</Button>
-        </div>
-      )}
-    </form>
+    </div>
   );
 }
+
+    
