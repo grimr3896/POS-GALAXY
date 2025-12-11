@@ -237,11 +237,11 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                 <div className="col-span-4 space-y-4">
                    {fields.map((field, index) => (
                     <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start p-3 border rounded-md">
-                        <div className="col-span-12 sm:col-span-4">
+                        <div className="col-span-12 sm:col-span-4 space-y-1">
                             <Label>Display Name</Label>
                             <Input {...register(`pourVariants.${index}.name`)} placeholder="e.g. 1/4 L" />
                         </div>
-                        <div className="col-span-6 sm:col-span-3">
+                        <div className="col-span-6 sm:col-span-3 space-y-1">
                             <Label>Size (L)</Label>
                              <Controller
                                 name={`pourVariants.${index}.pourSizeML`}
@@ -261,7 +261,7 @@ export function ProductFormSheet({ isOpen, onOpenChange, onSubmit, product }: Pr
                                 )}
                             />
                         </div>
-                        <div className="col-span-6 sm:col-span-3">
+                        <div className="col-span-6 sm:col-span-3 space-y-1">
                             <Label>Price (Ksh)</Label>
                             <Input type="number" {...register(`pourVariants.${index}.sellPrice`)} placeholder="e.g. 150" />
                         </div>
