@@ -7,6 +7,7 @@ import { SalesHistoryTable } from '../sales-history/sales-history-table';
 import { KPICard } from '../dashboard/kpi-card';
 import { DollarSign, Receipt, Package, ShoppingCart } from 'lucide-react';
 import { TopSellersChart } from '../dashboard/top-sellers-chart';
+import { EmployeeSalesChart } from './employee-sales-chart';
 
 interface GeneratedReportProps {
   data: Transaction[];
@@ -61,14 +62,7 @@ export function GeneratedReport({ data, users }: GeneratedReportProps) {
 
       <div className="grid gap-6 lg:grid-cols-2">
          <TopSellersChart data={topSellers} isLoading={false} />
-         <Card>
-            <CardHeader>
-                <CardTitle>More charts coming soon!</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground">Detailed employee and category breakdowns will be available here.</p>
-            </CardContent>
-         </Card>
+         <EmployeeSalesChart data={data} users={users} />
       </div>
 
       <Card>
