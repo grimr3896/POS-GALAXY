@@ -10,6 +10,8 @@ import type { User, Transaction, Product, TransactionItem } from "@/lib/types";
 import { GeneratedReport } from "./generated-report";
 import { useToast } from "@/hooks/use-toast";
 import { HistoricalTransactionForm } from "./historical-transaction-form";
+import { getGroupedItemsForCSV } from "@/lib/items";
+
 
 export default function ReportsPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -136,31 +138,6 @@ Galaxy Inn POS System
     }
   };
   
-  const getGroupedItemsForCSV = (items: TransactionItem[]) => {
-    if (!items || items.length === 0) return '';
-    const allProducts = getProducts();
-    
-    const grouped = items.reduce((acc, item) => {
-      const product = allProducts.find(p => p.id === item.productId);
-      const name = item.productName;
-      
-      if (!acc[name]) {
-        acc[name] = { quantity: 0, type: product?.type, pourSizeML: product?.pourVariants && product.pourVariants.length > 0 && product.pourVariants[0].pourSizeML };
-      }
-      acc[name].quantity += item.quantity;
-      
-      return acc;
-    }, {} as Record<string, { quantity: number; type?: string; pourSizeML?: number }>);
-
-    return Object.entries(grouped)
-      .map(([name, { quantity, type }]) => {
-         if (type === 'bottle') {
-            return `${quantity}x ${name}`;
-         }
-         return `${quantity}x ${name}`;
-      })
-      .join('; ');
-  };
 
   const handleDownloadReport = () => {
     if (!reportData) return;
