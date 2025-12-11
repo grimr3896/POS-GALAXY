@@ -11,6 +11,8 @@ import { GeneratedReport } from "./generated-report";
 import { useToast } from "@/hooks/use-toast";
 import { HistoricalTransactionForm } from "./historical-transaction-form";
 import { getGroupedItemsForCSV } from "@/lib/items";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/permissions";
 
 
 export default function ReportsPage() {
@@ -21,6 +23,8 @@ export default function ReportsPage() {
   const [reportData, setReportData] = useState<Transaction[] | null>(null);
   const { toast } = useToast();
   const [isHistoricalFormOpen, setIsHistoricalFormOpen] = useState(false);
+  const { user } = useAuth();
+
 
   const [filters, setFilters] = useState<ReportFiltersState>({
     reportType: "daily",
@@ -190,6 +194,7 @@ Galaxy Inn POS System
     document.body.removeChild(link);
   };
 
+  const canExport = hasPermission(user, 'sales:export');
 
   return (
     <>
@@ -204,10 +209,10 @@ Galaxy Inn POS System
                 </CardDescription>
               </div>
               <div className="mt-4 flex flex-wrap gap-2 md:mt-0">
-                  <Button onClick={() => setIsHistoricalFormOpen(true)}>Add Past Transaction</Button>
+                  {canExport && <Button onClick={() => setIsHistoricalFormOpen(true)}>Add Past Transaction</Button>}
                   <Button onClick={handleGenerateReport} disabled={loading}>Generate Report</Button>
-                  <Button variant="outline" onClick={handleDownloadReport} disabled={!reportData}>Download CSV</Button>
-                  <Button variant="outline" onClick={handleSendEmail} disabled={!reportData}>Send via Email</Button>
+                  {canExport && <Button variant="outline" onClick={handleDownloadReport} disabled={!reportData}>Download CSV</Button>}
+                  {canExport && <Button variant="outline" onClick={handleSendEmail} disabled={!reportData}>Send via Email</Button>}
               </div>
             </div>
           </CardHeader>
@@ -232,13 +237,15 @@ Galaxy Inn POS System
           </CardContent>
         </Card>
       </div>
-      <HistoricalTransactionForm
-        isOpen={isHistoricalFormOpen}
-        onOpenChange={setIsHistoricalFormOpen}
-        onSubmit={handleHistoricalSubmit}
-        employees={users}
-        products={products}
-      />
+      {isHistoricalFormOpen && (
+        <HistoricalTransactionForm
+            isOpen={isHistoricalFormOpen}
+            onOpenChange={setIsHistoricalFormOpen}
+            onSubmit={handleHistoricalSubmit}
+            employees={users}
+            products={products}
+        />
+      )}
     </>
   );
 }

@@ -1,12 +1,15 @@
+
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { getProductsWithInventory, saveProduct, deleteProduct } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, InventoryItem } from "@/lib/types";
+import type { User, Product, InventoryItem } from "@/lib/types";
 import { InventoryTable } from "./inventory-table";
 import { ProductFormSheet } from "./product-form-sheet";
 import { PasswordPromptDialog } from "./password-prompt-dialog";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/permissions";
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
@@ -14,8 +17,11 @@ export default function InventoryPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
-  const [productToEdit, setProductToEdit] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
+  const [productToAction, setProductToAction] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
+  const [actionToConfirm, setActionToConfirm] = useState<'edit' | 'delete' | null>(null);
+  const [productIdToDelete, setProductIdToDelete] = useState<number | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -29,48 +35,67 @@ export default function InventoryPage() {
   }, [fetchData]);
   
   const handleAddProduct = () => {
-    setEditingProduct(null);
-    setIsSheetOpen(true);
+    if (hasPermission(user, 'inventory:create')) {
+      setEditingProduct(null);
+      setIsSheetOpen(true);
+    } else {
+      toast({ variant: 'destructive', title: 'Permission Denied' });
+    }
   };
 
   const handleEditRequest = (product: Product & { inventory?: InventoryItem }) => {
-    setProductToEdit(product);
-    setIsPasswordDialogOpen(true);
+    if (hasPermission(user, 'inventory:update')) {
+      setProductToAction(product);
+      setActionToConfirm('edit');
+      // For Admins/Managers, maybe skip password, for others, prompt
+      if (user?.role === 'Admin' || user?.role === 'Manager') {
+        handlePasswordConfirm("626-jarvis"); // Simulate auto-confirm for high roles
+      } else {
+        setIsPasswordDialogOpen(true);
+      }
+    } else {
+      toast({ variant: 'destructive', title: 'Permission Denied' });
+    }
   };
 
+  const handleDeleteRequest = (productId: number) => {
+    if (hasPermission(user, 'inventory:delete')) {
+      setActionToConfirm('delete');
+      setProductIdToDelete(productId);
+      setIsPasswordDialogOpen(true);
+    } else {
+      toast({ variant: 'destructive', title: 'Permission Denied' });
+    }
+  };
+
+
   const handlePasswordConfirm = (password: string) => {
+    // In a real app, this would be a proper password/permission check
     if (password === "626-jarvis") {
-      setEditingProduct(productToEdit);
-      setIsSheetOpen(true);
-      setIsPasswordDialogOpen(false);
+      if (actionToConfirm === 'edit' && productToAction) {
+        setEditingProduct(productToAction);
+        setIsSheetOpen(true);
+      } else if (actionToConfirm === 'delete' && productIdToDelete !== null) {
+          try {
+            deleteProduct(productIdToDelete);
+            toast({ title: "Product Deleted", description: "The product has been removed." });
+            fetchData();
+          } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Could not delete the product." });
+          }
+      }
     } else {
       toast({
         variant: "destructive",
         title: "Incorrect Password",
-        description: "You do not have permission to edit product details.",
-      });
-      setIsPasswordDialogOpen(false);
-    }
-    setProductToEdit(null);
-  };
-
-  const handleDeleteProduct = (productId: number) => {
-    const password = prompt("Please enter the password to delete this product:");
-     if (password === "626-jarvis") {
-        try {
-          deleteProduct(productId);
-          toast({ title: "Product Deleted", description: "The product has been removed." });
-          fetchData();
-        } catch (error) {
-          toast({ variant: "destructive", title: "Error", description: "Could not delete the product." });
-        }
-    } else if (password !== null) {
-         toast({
-            variant: "destructive",
-            title: "Incorrect Password",
-            description: "You do not have permission to delete this product.",
+        description: "You do not have permission to perform this action.",
       });
     }
+    
+    setIsPasswordDialogOpen(false);
+    setProductToAction(null);
+    setProductIdToDelete(null);
+    setActionToConfirm(null);
   };
   
   const handleFormSubmit = (values: any) => {
@@ -98,19 +123,24 @@ export default function InventoryPage() {
         isLoading={loading}
         onAddProduct={handleAddProduct}
         onEditProduct={handleEditRequest}
-        onDeleteProduct={handleDeleteProduct}
+        onDeleteProduct={handleDeleteRequest}
+        canAdd={hasPermission(user, 'inventory:create')}
+        canEdit={hasPermission(user, 'inventory:update')}
+        canDelete={hasPermission(user, 'inventory:delete')}
       />
-      <ProductFormSheet 
-        isOpen={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
-        onSubmit={handleFormSubmit}
-        product={editingProduct}
-      />
+      {isSheetOpen && (
+        <ProductFormSheet 
+          isOpen={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          onSubmit={handleFormSubmit}
+          product={editingProduct}
+        />
+      )}
       <PasswordPromptDialog
         isOpen={isPasswordDialogOpen}
         onOpenChange={setIsPasswordDialogOpen}
         onConfirm={handlePasswordConfirm}
-        title="Enter Password to Edit"
+        title={`Enter Password to ${actionToConfirm}`}
         description="You need administrator permissions to modify product details."
       />
     </div>

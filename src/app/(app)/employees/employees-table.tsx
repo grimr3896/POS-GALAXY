@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -28,6 +29,9 @@ interface EmployeeTableProps {
   onAddEmployee: () => void;
   onEditEmployee: (employee: User) => void;
   onDeleteEmployee: (employeeId: number) => void;
+  canAdd: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 export function EmployeeTable({
@@ -36,6 +40,9 @@ export function EmployeeTable({
   onAddEmployee,
   onEditEmployee,
   onDeleteEmployee,
+  canAdd,
+  canEdit,
+  canDelete
 }: EmployeeTableProps) {
   const getInitials = (name: string) => {
     const names = name.split(" ");
@@ -53,7 +60,7 @@ export function EmployeeTable({
             <CardTitle>Employees</CardTitle>
             <CardDescription>Manage your staff members and their roles.</CardDescription>
           </div>
-          <Button onClick={onAddEmployee}>Add Employee</Button>
+          {canAdd && <Button onClick={onAddEmployee}>Add Employee</Button>}
         </div>
       </CardHeader>
       <CardContent>
@@ -64,9 +71,11 @@ export function EmployeeTable({
               <TableHead>Role</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Card ID</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
+              {(canEdit || canDelete) && (
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -85,7 +94,7 @@ export function EmployeeTable({
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-28" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    {(canEdit || canDelete) && <TableCell><Skeleton className="h-8 w-8" /></TableCell>}
                   </TableRow>
                 ))
               : data.map((employee) => (
@@ -109,27 +118,33 @@ export function EmployeeTable({
                       </div>
                     </TableCell>
                     <TableCell>{employee.companyCardId}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEditEmployee(employee)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => onDeleteEmployee(employee.id)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    {(canEdit || canDelete) && (
+                        <TableCell>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                            {canEdit && (
+                                <DropdownMenuItem onClick={() => onEditEmployee(employee)}>
+                                Edit
+                                </DropdownMenuItem>
+                            )}
+                            {canDelete && (
+                                <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => onDeleteEmployee(employee.id)}
+                                >
+                                Delete
+                                </DropdownMenuItem>
+                            )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        </TableCell>
+                    )}
                   </TableRow>
                 ))}
           </TableBody>

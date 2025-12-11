@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -7,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { EmployeeTable } from "./employees-table";
 import { EmployeeFormSheet } from "./employee-form-sheet";
 import { PasswordPromptDialog } from "@/app/(app)/inventory/password-prompt-dialog";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/permissions";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<User[]>([]);
@@ -16,6 +19,9 @@ export default function EmployeesPage() {
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<User | null>(null);
+  const [actionToConfirm, setActionToConfirm] = useState<'edit' | 'delete' | null>(null);
+  const [employeeIdToDelete, setEmployeeIdToDelete] = useState<number | null>(null);
+  const { user } = useAuth();
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -33,42 +39,53 @@ export default function EmployeesPage() {
   };
 
   const handleEditRequest = (employee: User) => {
-    setEmployeeToEdit(employee);
-    setIsPasswordDialogOpen(true);
-  };
-  
-  const handlePasswordConfirm = (password: string) => {
-    if (password === "626-jarvis") {
-      setEditingEmployee(employeeToEdit);
+    if (hasPermission(user, 'employees:update')) {
+      setEditingEmployee(employee);
       setIsSheetOpen(true);
     } else {
       toast({
         variant: "destructive",
-        title: "Incorrect Password",
+        title: "Permission Denied",
         description: "You do not have permission to edit employees.",
       });
     }
-    setIsPasswordDialogOpen(false);
-    setEmployeeToEdit(null);
+  };
+  
+  const handleDeleteRequest = (employeeId: number) => {
+    if (hasPermission(user, 'employees:delete')) {
+        setActionToConfirm('delete');
+        setEmployeeIdToDelete(employeeId);
+        setIsPasswordDialogOpen(true);
+    } else {
+         toast({
+            variant: "destructive",
+            title: "Permission Denied",
+            description: "You do not have permission to delete employees.",
+      });
+    }
   };
 
-  const handleDeleteEmployee = (userId: number) => {
-    const password = prompt("Please enter the password to delete this employee:");
-    if (password === "626-jarvis") {
-        try {
-        deleteUser(userId);
-        toast({ title: "Employee Deleted", description: "The employee has been removed." });
-        fetchData();
-        } catch (error: any) {
-        toast({ variant: "destructive", title: "Error", description: error.message || "Could not delete the employee." });
+  const handlePasswordConfirm = (password: string) => {
+    if (password === "626-jarvis") { // This should be a more secure check
+        if(actionToConfirm === 'delete' && employeeIdToDelete !== null) {
+            try {
+                deleteUser(employeeIdToDelete);
+                toast({ title: "Employee Deleted", description: "The employee has been removed." });
+                fetchData();
+            } catch (error: any) {
+                toast({ variant: "destructive", title: "Error", description: error.message || "Could not delete the employee." });
+            }
         }
-    } else if (password !== null) {
+    } else {
         toast({
             variant: "destructive",
             title: "Incorrect Password",
-            description: "You do not have permission to delete this employee.",
+            description: "The password provided is incorrect.",
       });
     }
+    setIsPasswordDialogOpen(false);
+    setActionToConfirm(null);
+    setEmployeeIdToDelete(null);
   };
 
   const handleFormSubmit = (values: any) => {
@@ -96,20 +113,25 @@ export default function EmployeesPage() {
         isLoading={loading}
         onAddEmployee={handleAddEmployee}
         onEditEmployee={handleEditRequest}
-        onDeleteEmployee={handleDeleteEmployee}
+        onDeleteEmployee={handleDeleteRequest}
+        canAdd={hasPermission(user, 'employees:create')}
+        canEdit={hasPermission(user, 'employees:update')}
+        canDelete={hasPermission(user, 'employees:delete')}
       />
-      <EmployeeFormSheet
-        isOpen={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
-        onSubmit={handleFormSubmit}
-        employee={editingEmployee}
-      />
+      {isSheetOpen && (
+        <EmployeeFormSheet
+          isOpen={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          onSubmit={handleFormSubmit}
+          employee={editingEmployee}
+        />
+      )}
        <PasswordPromptDialog
         isOpen={isPasswordDialogOpen}
         onOpenChange={setIsPasswordDialogOpen}
         onConfirm={handlePasswordConfirm}
-        title="Enter Password to Edit Employee"
-        description="You need administrator permissions to modify employee details."
+        title="Enter Admin Password"
+        description="Administrator password is required to delete an employee."
       />
     </div>
   );

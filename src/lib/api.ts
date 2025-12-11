@@ -9,6 +9,10 @@ import { getUUID } from "@/lib/utils";
 const seedUsers: User[] = [
   { id: 1, name: "Admin User", email: "admin@galaxyinn.com", phone: "0712345678", role: "Admin", companyCardId: "1001" },
   { id: 2, name: "Cashier One", email: "cashier1@galaxyinn.com", phone: "0787654321", role: "Cashier", companyCardId: "1002" },
+  { id: 3, name: "Manager Mike", email: "manager@galaxyinn.com", phone: "0722000000", role: "Manager", companyCardId: "1003" },
+  { id: 4, name: "Waiter Wendy", email: "waiter@galaxyinn.com", phone: "0733000000", role: "Waiter", companyCardId: "1004" },
+  { id: 5, name: "Stocker Steve", email: "stock@galaxyinn.com", phone: "0744000000", role: "Inventory Clerk", companyCardId: "1005" },
+  { id: 6, name: "Guard George", email: "security@galaxyinn.com", phone: "0755000000", role: "Security", companyCardId: "1006" },
 ];
 
 const seedProducts: Product[] = [
@@ -225,7 +229,7 @@ export const getTransactions = (): Transaction[] => getFromStorage("transactions
 
 const calculateLineCost = (item: OrderItem | TransactionItem): number => {
     if (item.type === 'pour' && item.pourSizeML) {
-        // buyPrice is per-ml for drums.
+        // buyPrice for drums is per-ml.
         return item.buyPrice * item.pourSizeML * item.quantity;
     }
     // For bottles, buyPrice is per-bottle.
@@ -244,16 +248,24 @@ export const saveTransaction = (
     
     const transactionItems: TransactionItem[] = items.map((item, index) => {
         const lineTotal = item.lineTotal || (item.quantity * item.unitPrice);
-        const lineCost = calculateLineCost(item);
+        
+        // Correctly define buyPrice for the transaction item
+        const productInfo = getProducts().find(p => p.id === item.productId);
+        let transactionItemBuyPrice = item.buyPrice;
+        if(item.type === 'pour' && item.pourSizeML && productInfo?.type === 'drum'){
+            // item.buyPrice from a pour orderItem IS the per-ml cost
+            transactionItemBuyPrice = item.buyPrice * item.pourSizeML;
+        }
+
         return {
             id: parseInt(`${Date.now()}${index}`),
             productId: item.productId,
             productName: item.name || ('productName' in item ? item.productName : 'Unknown'),
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            buyPrice: item.buyPrice,
+            buyPrice: transactionItemBuyPrice, // This is now per-unit cost
             lineTotal: lineTotal,
-            lineCost: lineCost,
+            lineCost: transactionItemBuyPrice * item.quantity, // unit cost * quantity
             pourSizeML: item.pourSizeML,
         }
     });

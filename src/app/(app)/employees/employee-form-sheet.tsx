@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -22,15 +23,17 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import type { User } from "@/lib/types";
+import type { User, Role } from "@/lib/types";
 import { useEffect } from "react";
+
+const availableRoles: Role[] = ["Admin", "Manager", "Cashier", "Waiter", "Inventory Clerk", "Security"];
 
 const formSchema = z.object({
   id: z.number().optional(),
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address.").optional().or(z.literal('')),
   phone: z.string().optional(),
-  role: z.enum(["Admin", "Cashier", "Manager", "Waiter", "Cleaner", "Security"]),
+  role: z.enum(["Admin", "Manager", "Cashier", "Waiter", "Inventory Clerk", "Security"]),
   companyCardId: z.string().min(4, "Card ID must be at least 4 characters."),
 });
 
@@ -117,12 +120,9 @@ export function EmployeeFormSheet({ isOpen, onOpenChange, onSubmit, employee }: 
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="Manager">Manager</SelectItem>
-                      <SelectItem value="Cashier">Cashier</SelectItem>
-                      <SelectItem value="Waiter">Waiter</SelectItem>
-                      <SelectItem value="Cleaner">Cleaner</SelectItem>
-                      <SelectItem value="Security">Security</SelectItem>
+                      {availableRoles.map(role => (
+                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}

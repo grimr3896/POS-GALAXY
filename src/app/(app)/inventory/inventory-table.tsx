@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -28,6 +29,9 @@ interface InventoryTableProps {
   onAddProduct: () => void;
   onEditProduct: (product: Product & { inventory?: InventoryItem }) => void;
   onDeleteProduct: (productId: number) => void;
+  canAdd: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 export function InventoryTable({
@@ -36,6 +40,9 @@ export function InventoryTable({
   onAddProduct,
   onEditProduct,
   onDeleteProduct,
+  canAdd,
+  canEdit,
+  canDelete
 }: InventoryTableProps) {
   const renderStock = (item: Product & { inventory?: InventoryItem }) => {
     if (!item.inventory) return <Badge variant="outline">N/A</Badge>;
@@ -80,7 +87,7 @@ export function InventoryTable({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Products</CardTitle>
-          <Button onClick={onAddProduct}>Add Product</Button>
+          {canAdd && <Button onClick={onAddProduct}>Add Product</Button>}
         </div>
       </CardHeader>
       <CardContent>
@@ -95,9 +102,11 @@ export function InventoryTable({
               <TableHead className="hidden md:table-cell">Type</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Sell Price</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
+              {(canEdit || canDelete) && (
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -110,7 +119,7 @@ export function InventoryTable({
                     <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    {(canEdit || canDelete) && <TableCell><Skeleton className="h-8 w-8" /></TableCell>}
                   </TableRow>
                 ))
               : data.map((product) => (
@@ -131,27 +140,33 @@ export function InventoryTable({
                     </TableCell>
                     <TableCell>{renderStock(product)}</TableCell>
                     <TableCell>{getSellPriceDisplay(product)}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEditProduct(product)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => onDeleteProduct(product.id)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    {(canEdit || canDelete) && (
+                        <TableCell>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                            {canEdit && (
+                                <DropdownMenuItem onClick={() => onEditProduct(product)}>
+                                Edit
+                                </DropdownMenuItem>
+                            )}
+                            {canDelete && (
+                                <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => onDeleteProduct(product.id)}
+                                >
+                                Delete
+                                </DropdownMenuItem>
+                            )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        </TableCell>
+                    )}
                   </TableRow>
                 ))}
           </TableBody>

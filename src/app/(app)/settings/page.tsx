@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -7,6 +8,14 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,28 +31,43 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
-const roleSchema = z.object({
-  name: z.string(),
-  canAccessPOS: z.boolean(),
-  canAccessInventory: z.boolean(),
-  canAccessSalesHistory: z.boolean(),
-  canAccessEmployees: z.boolean(),
-  canAccessSettings: z.boolean(),
-});
+import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/types";
+import type { Role, Permission } from "@/lib/types";
+import { Check, X } from "lucide-react";
 
 const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
   currency: z.string(),
   taxRate: z.coerce.number().min(0).max(100),
   idleTimeout: z.coerce.number().min(0),
-  roles: z.array(roleSchema),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
+const allPermissions: { group: string, permissions: { id: Permission, label: string}[] }[] = [
+    { group: 'POS', permissions: [
+        { id: 'page:pos', label: 'Access' }, { id: 'pos:create', label: 'Create' }, { id: 'pos:update', label: 'Update' }, { id: 'pos:delete', label: 'Delete' }, { id: 'pos:discount', label: 'Discount' }
+    ]},
+    { group: 'Inventory', permissions: [
+        { id: 'page:inventory', label: 'Access' }, { id: 'inventory:create', label: 'Create' }, { id: 'inventory:update', label: 'Update' }, { id: 'inventory:delete', label: 'Delete' }
+    ]},
+    { group: 'Sales', permissions: [
+        { id: 'page:sales-history', label: 'Access' }, { id: 'sales:read_all', label: 'Read All' }, { id: 'sales:read_own', label: 'Read Own' }, { id: 'sales:export', label: 'Export' }
+    ]},
+    { group: 'Employees', permissions: [
+        { id: 'page:employees', label: 'Access' }, { id: 'employees:create', label: 'Create' }, { id: 'employees:update', label: 'Update' }, { id: 'employees:delete', label: 'Delete' }
+    ]},
+    { group: 'Settings', permissions: [
+        { id: 'page:settings', label: 'Access' }, { id: 'settings:read', label: 'Read' }, { id: 'settings:update', label: 'Update' }
+    ]},
+];
+
 export default function SettingsPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canUpdateSettings = hasPermission(user, 'settings:update');
 
   const {
     register,
@@ -57,21 +81,8 @@ export default function SettingsPage() {
       currency: "KSH",
       taxRate: 16,
       idleTimeout: 300,
-      roles: [
-          { name: 'Admin', canAccessPOS: true, canAccessInventory: true, canAccessSalesHistory: true, canAccessEmployees: true, canAccessSettings: true },
-          { name: 'Manager', canAccessPOS: true, canAccessInventory: true, canAccessSalesHistory: true, canAccessEmployees: false, canAccessSettings: false },
-          { name: 'Cashier', canAccessPOS: true, canAccessInventory: false, canAccessSalesHistory: false, canAccessEmployees: false, canAccessSettings: false },
-          { name: 'Waiter', canAccessPOS: true, canAccessInventory: false, canAccessSalesHistory: false, canAccessEmployees: false, canAccessSettings: false },
-          { name: 'Cleaner', canAccessPOS: false, canAccessInventory: false, canAccessSalesHistory: false, canAccessEmployees: false, canAccessSettings: false },
-          { name: 'Security', canAccessPOS: false, canAccessInventory: false, canAccessSalesHistory: false, canAccessEmployees: false, canAccessSettings: false },
-      ]
     },
   });
-
-  const { fields } = useFieldArray({
-      control,
-      name: 'roles'
-  })
 
   const onSubmit = (data: SettingsFormValues) => {
     // In a real app, you'd save these settings to a backend or localStorage
@@ -81,6 +92,9 @@ export default function SettingsPage() {
       description: "Your new settings have been applied.",
     });
   };
+  
+  const roles = Object.keys(rolePermissions) as Role[];
+
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -94,7 +108,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="appName">Application Name</Label>
-            <Input id="appName" {...register("appName")} />
+            <Input id="appName" {...register("appName")} disabled={!canUpdateSettings} />
             {errors.appName && <p className="text-sm text-destructive">{errors.appName.message}</p>}
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -104,7 +118,7 @@ export default function SettingsPage() {
                 name="currency"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!canUpdateSettings}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
@@ -119,7 +133,7 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="taxRate">Tax Rate (%)</Label>
-              <Input id="taxRate" type="number" {...register("taxRate")} />
+              <Input id="taxRate" type="number" {...register("taxRate")} disabled={!canUpdateSettings}/>
               {errors.taxRate && <p className="text-sm text-destructive">{errors.taxRate.message}</p>}
             </div>
           </div>
@@ -136,7 +150,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="idleTimeout">Idle Timeout (seconds)</Label>
-                <Input id="idleTimeout" type="number" {...register("idleTimeout")} placeholder="e.g., 300 for 5 minutes" />
+                <Input id="idleTimeout" type="number" {...register("idleTimeout")} placeholder="e.g., 300 for 5 minutes" disabled={!canUpdateSettings}/>
                 <p className="text-xs text-muted-foreground">Automatically log out after a period of inactivity. Set to 0 to disable.</p>
                 {errors.idleTimeout && <p className="text-sm text-destructive">{errors.idleTimeout.message}</p>}
             </div>
@@ -145,29 +159,47 @@ export default function SettingsPage() {
 
             <div>
                 <h3 className="text-lg font-medium">Role Permissions</h3>
-                <p className="text-sm text-muted-foreground">Define which tabs each role can access.</p>
+                <p className="text-sm text-muted-foreground">Define which tabs and actions each role can access.</p>
             </div>
-             <div className="space-y-4">
-                {fields.map((role, index) => (
-                    <div key={role.id} className="rounded-md border p-4">
-                        <h4 className="font-semibold">{role.name}</h4>
-                        <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
-                           <p className="text-sm flex items-center">POS</p>
-                           <p className="text-sm flex items-center">Inventory</p>
-                           <p className="text-sm flex items-center">Sales</p>
-                           <p className="text-sm flex items-center">Employees</p>
-                           <p className="text-sm flex items-center">Settings</p>
-                        </div>
-                    </div>
-                ))}
+             <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[150px]">Permission</TableHead>
+                            {roles.map(role => <TableHead key={role} className="text-center">{role}</TableHead>)}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {allPermissions.map(group => (
+                            <React.Fragment key={group.group}>
+                                <TableRow className="bg-muted/50">
+                                    <TableCell colSpan={roles.length + 1} className="font-semibold">{group.group}</TableCell>
+                                </TableRow>
+                                {group.permissions.map(permission => (
+                                    <TableRow key={permission.id}>
+                                        <TableCell className="pl-6 text-muted-foreground">{permission.label}</TableCell>
+                                        {roles.map(role => (
+                                            <TableCell key={`${role}-${permission.id}`} className="text-center">
+                                                {rolePermissions[role].includes(permission.id) 
+                                                    ? <Check className="h-5 w-5 text-green-500 mx-auto" /> 
+                                                    : <X className="h-5 w-5 text-destructive mx-auto" />}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </React.Fragment>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
-
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button type="submit">Save All Settings</Button>
-      </div>
+      {canUpdateSettings && (
+        <div className="flex justify-end">
+          <Button type="submit">Save All Settings</Button>
+        </div>
+      )}
     </form>
   );
 }

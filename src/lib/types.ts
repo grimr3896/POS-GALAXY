@@ -4,7 +4,7 @@ export type User = {
   name: string;
   email?: string;
   phone?: string;
-  role: "Admin" | "Cashier" | "Manager" | "Waiter" | "Cleaner" | "Security";
+  role: "Admin" | "Manager" | "Cashier" | "Waiter" | "Inventory Clerk" | "Security";
   companyCardId: string;
 };
 
@@ -94,4 +94,60 @@ export type Expense = {
   amount: number;
   category: string;
   userId: number; // Who recorded it
+};
+
+export type Permission = 
+  // POS
+  | 'pos:create' | 'pos:read' | 'pos:update' | 'pos:delete' | 'pos:void' | 'pos:discount' | 'pos:refund'
+  // Inventory
+  | 'inventory:create' | 'inventory:read' | 'inventory:update' | 'inventory:delete' | 'inventory:adjust'
+  // Sales
+  | 'sales:read_all' | 'sales:export' | 'sales:analytics' | 'sales:read_own'
+  // Employees
+  | 'employees:create' | 'employees:read' | 'employees:update' | 'employees:delete' | 'employees:assign'
+  // Settings
+  | 'settings:read' | 'settings:update'
+  // General Page Access
+  | 'page:dashboard' | 'page:pos' | 'page:inventory' | 'page:sales-history' | 'page:expenses' | 'page:reports' | 'page:employees' | 'page:settings';
+
+export type Role = "Admin" | "Manager" | "Cashier" | "Waiter" | "Inventory Clerk" | "Security";
+
+export const rolePermissions: Record<Role, Permission[]> = {
+  Admin: [
+    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:expenses', 'page:reports', 'page:employees', 'page:settings',
+    'pos:create', 'pos:read', 'pos:update', 'pos:delete', 'pos:void', 'pos:discount', 'pos:refund',
+    'inventory:create', 'inventory:read', 'inventory:update', 'inventory:delete', 'inventory:adjust',
+    'sales:read_all', 'sales:export', 'sales:analytics', 'sales:read_own',
+    'employees:create', 'employees:read', 'employees:update', 'employees:delete', 'employees:assign',
+    'settings:read', 'settings:update',
+  ],
+  Manager: [
+    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:expenses', 'page:reports', 'page:employees',
+    'pos:create', 'pos:read', 'pos:update', 'pos:discount', 'pos:refund',
+    'inventory:create', 'inventory:read', 'inventory:update', 'inventory:adjust',
+    'sales:read_all', 'sales:export', 'sales:analytics', 'sales:read_own',
+    'employees:read',
+    'settings:read',
+  ],
+  Cashier: [
+    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history',
+    'pos:create', 'pos:read',
+    'inventory:read',
+    'sales:read_own',
+  ],
+  Waiter: [
+    'page:pos', 'page:inventory', 'page:sales-history',
+    'pos:create', 'pos:read',
+    'inventory:read',
+    'sales:read_own',
+  ],
+  "Inventory Clerk": [
+    'page:inventory', 'page:reports',
+    'inventory:create', 'inventory:read', 'inventory:update', 'inventory:delete', 'inventory:adjust',
+    'sales:read_all', // For reorder reports
+  ],
+  Security: [
+    'page:pos',
+    'pos:read', // Monitor transactions
+  ],
 };
