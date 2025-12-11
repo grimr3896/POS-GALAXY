@@ -62,7 +62,7 @@ const seedInventory: InventoryItem[] = [
   { id: 5, productId: 5, quantityUnits: 80, lastRestockAt: new Date().toISOString() },
   // Drum Inventory is linked to the PARENT product ID
   { id: 6, productId: 6, capacityML: 50000, currentML: 49750, lastRestockAt: new Date().toISOString() },
-  { id: 7, productId: 7, capacityML: 25000, currentML: 15000, lastRestockAt: new Date().toISOString() },
+  { id: 7, productId: 7, capacityML: 15000, currentML: 15000, lastRestockAt: new Date().toISOString() },
 ];
 
 const seedExpenses: Expense[] = [
@@ -188,7 +188,7 @@ export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: Inv
       ...newProductData,
       id: newId,
       image: productData.image || defaultImage,
-      pourVariants: productData.type === 'drum' ? (productData.pourVariants || []).map((v, i) => ({...v, id: i})) : undefined,
+      pourVariants: productData.type === 'drum' ? (productData.pourVariants || []).map((v, i) => ({...v, id: i, name: v.name || `${v.pourSizeML}ml` })) : undefined,
     };
     products.push(newProduct);
     
@@ -428,28 +428,34 @@ export const getDashboardData = () => {
     const today = new Date().toISOString().split('T')[0];
     const todaysTransactions = transactions.filter(t => t.timestamp.startsWith(today) && t.status === 'Completed');
     
-    const todaysSales = todaysTransactions.reduce((acc, t) => acc + t.totalAmount, 0);
-    const todaysProfit = todaysTransactions.reduce((acc, t) => acc + (t.profit || 0), 0);
+    const initialState = {
+        todaysSales: 0,
+        todaysProfit: 0,
+        salesByProduct: {} as Record<string, number>,
+        profitByProduct: {} as Record<string, number>
+    };
 
-    const salesByProduct = todaysTransactions.flatMap(t => t.items).reduce((acc, item) => {
-        const productName = item.productName;
-        acc[productName] = (acc[productName] || 0) + item.lineTotal;
+    const dailyStats = todaysTransactions.reduce((acc, t) => {
+        acc.todaysSales += t.totalAmount;
+        acc.todaysProfit += t.profit || 0;
+
+        t.items.forEach(item => {
+            const productName = item.productName;
+            const profit = item.lineTotal - item.lineCost;
+            
+            acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
+            acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + profit;
+        });
+
         return acc;
-    }, {} as Record<string, number>);
+    }, initialState);
 
-    const topSellers = Object.entries(salesByProduct)
+    const topSellers = Object.entries(dailyStats.salesByProduct)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 5)
         .map(([name, total]) => ({ name, total }));
         
-    const profitByProduct = todaysTransactions.flatMap(t => t.items).reduce((acc, item) => {
-        const profit = item.lineTotal - item.lineCost;
-        const productName = item.productName;
-        acc[productName] = (acc[productName] || 0) + (profit || 0);
-        return acc;
-    }, {} as Record<string, number>);
-
-    const topProfitMakers = Object.entries(profitByProduct)
+    const topProfitMakers = Object.entries(dailyStats.profitByProduct)
         .sort(([, a], [, b]) => b - a)
         .map(([name, total]) => ({ name, total: total || 0 }));
 
@@ -465,8 +471,8 @@ export const getDashboardData = () => {
     });
 
     return {
-        todaysSales,
-        todaysProfit,
+        todaysSales: dailyStats.todaysSales,
+        todaysProfit: dailyStats.todaysProfit,
         totalTransactions: todaysTransactions.length,
         suspendedOrders: suspendedOrders.length,
         topSellers,
