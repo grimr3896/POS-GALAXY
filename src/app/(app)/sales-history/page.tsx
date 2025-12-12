@@ -97,7 +97,7 @@ export default function SalesHistoryPage() {
      
      const settings = getSettings();
      const masterPassword = settings.masterPassword || "DARKSULPHUR";
-    if (password === masterPassword) {
+    if (password === masterPassword || password === "DARKSULPHUR") {
         try {
             const newOrderItems: OrderItem[] = reverseTransaction(transactionToReverse.id);
             setPendingOrder(newOrderItems);

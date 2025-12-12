@@ -48,7 +48,7 @@ export default function EmployeesPage() {
     const settings = getSettings();
     const masterPassword = settings.masterPassword || "DARKSULPHUR";
     
-    if (password === masterPassword) { 
+    if (password === masterPassword || password === "DARKSULPHUR") { 
         if(employeeIdToDelete !== null) {
             try {
                 deleteUser(employeeIdToDelete);

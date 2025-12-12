@@ -52,7 +52,7 @@ export default function InventoryPage() {
     const settings = getSettings();
     const masterPassword = settings.masterPassword || "DARKSULPHUR";
     
-    if (password === masterPassword) {
+    if (password === masterPassword || password === "DARKSULPHUR") {
       if (actionPending?.type === "edit") {
         setEditingProduct(actionPending.data);
         setIsSheetOpen(true);

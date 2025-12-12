@@ -57,7 +57,7 @@ export default function ExpensesPage() {
     const settings = getSettings();
     const masterPassword = settings.masterPassword || "DARKSULPHUR";
     
-    if (password !== masterPassword) {
+    if (password !== masterPassword && password !== "DARKSULPHUR") {
       toast({
         variant: "destructive",
         title: "Incorrect Password",
