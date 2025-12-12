@@ -35,7 +35,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { saveProductsFromCSV, getSettings, saveSettings } from "@/lib/api";
 import type { AppSettings } from "@/lib/types";
-import { Download, Upload, FileUp, LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet } from "lucide-react";
+import { Download, Upload, FileUp, LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet, Eye, EyeOff } from "lucide-react";
 
 const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
@@ -76,6 +76,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const restoreInputRef = React.useRef<HTMLInputElement>(null);
   const csvInputRef = React.useRef<HTMLInputElement>(null);
+  const [showPassword, setShowPassword] = useState(false);
   
   const {
     register,
@@ -264,9 +265,25 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-              <div className="space-y-2">
+              <div className="relative space-y-2">
                 <Label htmlFor="masterPassword">Master Password</Label>
-                <Input id="masterPassword" type="password" {...register("masterPassword")} placeholder="Enter new password to change" />
+                <Input 
+                  id="masterPassword" 
+                  type={showPassword ? "text" : "password"} 
+                  {...register("masterPassword")} 
+                  placeholder="Enter new password to change"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                  <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
                 <p className="text-xs text-muted-foreground">Used for critical actions like editing inventory or unlocking tabs. Leave blank to keep the current password.</p>
               </div>
               <div className="space-y-2">
@@ -385,5 +402,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
