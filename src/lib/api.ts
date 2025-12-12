@@ -8,13 +8,52 @@ import { getUUID } from "@/lib/utils";
 // --- Seed Data ---
 const seedUsers: User[] = [
   { id: 1, name: "Admin User", email: "admin@galaxyinn.com", phone: "0712345678", role: "Admin", companyCardId: "1001" },
+  { id: 2, name: "John Manager", email: "john@galaxyinn.com", phone: "0787654321", role: "Manager", companyCardId: "1002" },
+  { id: 3, name: "Jane Cashier", email: "jane@galaxyinn.com", phone: "0711223344", role: "Cashier", companyCardId: "1003" },
 ];
 
-const seedProducts: Product[] = [];
+const seedProducts: Product[] = [
+    { 
+        id: 1, sku: 'SKU001', name: 'Guinness', image: 'https://picsum.photos/seed/guinness/400/400', 
+        type: 'bottle', unit: 'bottle', buyPrice: 180, sellPrice: 300, thresholdQuantity: 12 
+    },
+    { 
+        id: 2, sku: 'SKU002', name: 'Tusker Lager', image: 'https://picsum.photos/seed/tusker/400/400', 
+        type: 'bottle', unit: 'bottle', buyPrice: 160, sellPrice: 280, thresholdQuantity: 12 
+    },
+    { 
+        id: 3, sku: 'SKU003', name: 'Coca-Cola', image: 'https://picsum.photos/seed/coke/400/400', 
+        type: 'bottle', unit: 'bottle', buyPrice: 40, sellPrice: 80, thresholdQuantity: 24 
+    },
+    { 
+        id: 4, sku: 'SKU004', name: 'Keringet Water', image: 'https://picsum.photos/seed/water/400/400', 
+        type: 'bottle', unit: 'bottle', buyPrice: 30, sellPrice: 70, thresholdQuantity: 24
+    },
+    { 
+        id: 5, sku: 'DRUM001', name: 'Famous Grouse', image: 'https://picsum.photos/seed/whiskey/400/400', 
+        type: 'drum', unit: 'ml', buyPrice: 1.5, // Price per ml
+        sellPrice: 0, // Not sold by drum
+        thresholdQuantity: 5000, // 5L
+        pourVariants: [
+            { id: 1, name: 'Tot', pourSizeML: 30, sellPrice: 150 },
+            { id: 2, name: '1/4 Flsk', pourSizeML: 250, sellPrice: 1200 },
+            { id: 3, name: '1/2 Flsk', pourSizeML: 375, sellPrice: 1800 },
+        ]
+    },
+];
 
-const seedInventory: InventoryItem[] = [];
+const seedInventory: InventoryItem[] = [
+    { id: 1, productId: 1, quantityUnits: 48, lastRestockAt: new Date().toISOString() },
+    { id: 2, productId: 2, quantityUnits: 36, lastRestockAt: new Date().toISOString() },
+    { id: 3, productId: 3, quantityUnits: 72, lastRestockAt: new Date().toISOString() },
+    { id: 4, productId: 4, quantityUnits: 60, lastRestockAt: new Date().toISOString() },
+    { id: 5, productId: 5, capacityML: 20000, currentML: 15000, lastRestockAt: new Date().toISOString() },
+];
 
-const seedExpenses: Expense[] = [];
+const seedExpenses: Expense[] = [
+    { id: 1, date: new Date().toISOString(), description: 'Cleaning Supplies', amount: 2500, category: 'General', userId: 1 },
+    { id: 2, date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), description: 'Security light repair', amount: 1800, category: 'Maintenance', userId: 2 },
+];
 
 
 // --- LocalStorage Wrapper ---
