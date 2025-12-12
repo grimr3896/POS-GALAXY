@@ -83,6 +83,7 @@ export function SalesHistoryTable({ transactions, users, isLoading, onViewTransa
               <TableHead>Order ID</TableHead>
               <TableHead>Employee</TableHead>
               <TableHead>Items</TableHead>
+              <TableHead>Tax</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead className="text-right">Profit</TableHead>
               <TableHead>Payment</TableHead>
@@ -95,7 +96,7 @@ export function SalesHistoryTable({ transactions, users, isLoading, onViewTransa
             {isLoading
               ? Array.from({ length: 10 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={9}><Skeleton className="h-8 w-full" /></TableCell>
+                    <TableCell colSpan={10}><Skeleton className="h-8 w-full" /></TableCell>
                   </TableRow>
                 ))
               : transactions.length > 0 ? transactions.map((t) => (
@@ -107,6 +108,7 @@ export function SalesHistoryTable({ transactions, users, isLoading, onViewTransa
                             {formatItems(t.items).truncated}
                         </span>
                     </TableCell>
+                    <TableCell>{formatCurrency(t.totalTax)}</TableCell>
                     <TableCell className="text-right">{formatCurrency(t.total)}</TableCell>
                     <TableCell className={cn("text-right", (t.profit || 0) < 0 && "text-destructive")}>
                         {formatCurrency(t.profit)}
@@ -137,7 +139,7 @@ export function SalesHistoryTable({ transactions, users, isLoading, onViewTransa
                   </TableRow>
                 )) : (
                 <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center">
+                    <TableCell colSpan={10} className="h-24 text-center">
                         No transactions found for the selected filters.
                     </TableCell>
                 </TableRow>

@@ -91,10 +91,27 @@ export function TransactionDetailModal({
             <Separator />
 
              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>{formatCurrency(transaction.total - (transaction.totalTax || 0))}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                    <span>Tax (incl.):</span>
+                    <span>{formatCurrency(transaction.totalTax)}</span>
+                </div>
                 <div className="flex justify-between font-bold mt-1">
                     <span>TOTAL:</span>
                     <span>{formatCurrency(transaction.total)}</span>
                 </div>
+                 <div className="flex justify-between text-green-600 font-medium mt-1">
+                <span>Profit:</span>
+                <span>{formatCurrency(transaction.profit)}</span>
+                </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2 text-sm">
                 {hasCash && (
                     <div className="flex justify-between text-muted-foreground mt-2">
                         <span>Paid (Cash):</span>
@@ -110,10 +127,6 @@ export function TransactionDetailModal({
                  <div className="flex justify-between text-muted-foreground">
                     <span>Change:</span>
                     <span>{formatCurrency(transaction.change)}</span>
-                </div>
-                 <div className="flex justify-between text-green-600 font-medium mt-1">
-                <span>Profit:</span>
-                <span>{formatCurrency(transaction.profit)}</span>
                 </div>
             </div>
             

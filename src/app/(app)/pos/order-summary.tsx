@@ -31,6 +31,8 @@ interface OrderSummaryProps {
   onClear: () => void;
 }
 
+const VAT_RATE = 0.16;
+
 export function OrderSummary({
   items,
   suspendedOrders,
@@ -42,7 +44,8 @@ export function OrderSummary({
   onClear,
 }: OrderSummaryProps) {
   
-  const total = items.reduce((acc, item) => acc + item.totalPrice, 0);
+  const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
+  const totalTax = subtotal * (VAT_RATE / (1 + VAT_RATE));
 
   return (
     <>
@@ -124,9 +127,18 @@ export function OrderSummary({
       {items.length > 0 && (
         <CardFooter className="flex-col !p-0">
           <div className="w-full p-6 space-y-2">
+             <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span>Ksh {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+             <div className="flex justify-between text-sm text-muted-foreground">
+              <span>VAT (16% included)</span>
+              <span>Ksh {totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <Separator />
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
-              <span>Ksh {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>Ksh {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
           <div className="w-full border-t bg-muted/50 p-4">

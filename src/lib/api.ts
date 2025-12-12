@@ -5,6 +5,8 @@
 import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant, DailyReport } from "./types";
 import { getUUID } from "@/lib/utils";
 
+const VAT_RATE = 0.16; // 16% VAT
+
 // --- Seed Data ---
 const seedUsers: User[] = [
   { id: 1, name: "Admin User", email: "admin@galaxyinn.com", phone: "0712345678", role: "Admin", companyCardId: "1001" },
@@ -281,6 +283,9 @@ export interface PaymentDetails {
     change?: number;
 }
 
+const calculateTax = (price: number) => price * (VAT_RATE / (1 + VAT_RATE));
+
+
 export const saveTransaction = (
     userId: number, 
     items: (OrderItem | TransactionItem)[], 
@@ -300,6 +305,7 @@ export const saveTransaction = (
         const unitBuyPrice = calculateLineCost(item, product);
         const lineTotal = item.quantity * item.unitPrice;
         const lineCost = item.quantity * unitBuyPrice;
+        const lineTax = calculateTax(lineTotal);
 
         return {
             id: parseInt(`${Date.now()}${index}`),
@@ -310,12 +316,14 @@ export const saveTransaction = (
             buyPrice: unitBuyPrice,
             lineTotal: lineTotal,
             lineCost: lineCost,
+            lineTax: lineTax,
             pourSizeML: item.pourSizeML,
         }
     });
     
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
-    const profit = total - totalCost;
+    const totalTax = transactionItems.reduce((acc, item) => acc + item.lineTax, 0);
+    const profit = total - totalCost - totalTax;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -325,6 +333,7 @@ export const saveTransaction = (
         userId,
         items: transactionItems,
         total: total,
+        totalTax: totalTax,
         amountReceived: paymentDetails.amountReceived,
         cashAmount: paymentDetails.cashAmount || 0,
         mpesaAmount: paymentDetails.mpesaAmount || 0,
@@ -518,7 +527,7 @@ export const getDashboardData = () => {
 
         t.items.forEach(item => {
             const productName = item.productName;
-            const itemProfit = item.lineTotal - item.lineCost;
+            const itemProfit = item.lineTotal - item.lineCost - (item.lineTax || 0);
             
             acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
             acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;

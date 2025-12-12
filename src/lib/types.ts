@@ -23,7 +23,7 @@ export type Product = {
   image: string;
   type: "bottle" | "drum";
   buyPrice: number; // For drums, this is cost per ml
-  sellPrice?: number; // For bottles
+  sellPrice: number; // For bottles
   thresholdQuantity: number; // In units for bottles, in ml for drums
   pourVariants?: ProductPourVariant[];
 };
@@ -49,6 +49,7 @@ export type TransactionItem = {
   buyPrice: number; // buy price per unit (bottle or pour variant)
   lineTotal: number;
   lineCost: number;
+  lineTax: number;
   pourSizeML?: number;
 };
 
@@ -58,6 +59,7 @@ export type Transaction = {
   userId: number;
   items: TransactionItem[];
   total: number;
+  totalTax: number;
   amountReceived: number;
   cashAmount: number;
   mpesaAmount: number;

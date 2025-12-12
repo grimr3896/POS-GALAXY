@@ -36,6 +36,8 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
             name: i.productName,
             total: i.lineTotal.toLocaleString()
         })),
+        subtotal: `Ksh ${(transaction.total - (transaction.totalTax || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        tax: `Ksh ${(transaction.totalTax || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         total: `Ksh ${transaction.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         cashAmount: `Ksh ${transaction.cashAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         mpesaAmount: `Ksh ${transaction.mpesaAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
@@ -65,11 +67,6 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
                 .item-row { display: grid; grid-template-columns: 1fr auto; gap: 4px; }
                 .item-name { word-break: break-all; }
                 .totals-row { display: grid; grid-template-columns: 1fr auto; gap: 2px; }
-                .logo {
-                    width: 40px;
-                    height: 40px;
-                    margin: 0 auto;
-                }
             </style>
         </head>
         <body>
@@ -90,6 +87,14 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
             ).join("")}
 
             <div class="line"></div>
+            <div class="totals-row">
+                <span>Subtotal:</span>
+                <span>${sale.subtotal}</span>
+            </div>
+            <div class="totals-row">
+                <span>Tax (incl):</span>
+                <span>${sale.tax}</span>
+            </div>
             <div class="totals-row bold">
                 <span>TOTAL:</span>
                 <span>${sale.total}</span>
@@ -179,6 +184,14 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
           </div>
           <Separator />
            <div className="my-4 space-y-1 text-sm">
+                <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>Ksh {(transaction.total - (transaction.totalTax || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                    <span>VAT (16% included):</span>
+                    <span>Ksh {(transaction.totalTax || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
                 <div className="flex justify-between font-bold text-base mt-1">
                     <span>TOTAL:</span>
                     <span>Ksh {transaction.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
