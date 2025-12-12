@@ -36,8 +36,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { saveProductsFromCSV, getSettings, saveSettings } from "@/lib/api";
 import type { AppSettings } from "@/lib/types";
-import { Download, Upload, FileUp, LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet, Eye, EyeOff } from "lucide-react";
+import { Download, Upload, FileUp, LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet, Eye, EyeOff, AlertCircle, ServerCrash } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 const settingsSchema = z.object({
@@ -63,7 +64,7 @@ const allTabs = [
   { id: "/settings", label: "Settings", icon: Settings },
 ];
 
-const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses", "settings"];
+const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses", "settings", "pos_initialized_v4", "reports"];
 
 const defaultFormValues: SettingsFormValues = {
     appName: "Galaxy Inn",
@@ -219,6 +220,23 @@ export default function SettingsPage() {
     };
     reader.readAsText(file);
   };
+
+  const handleFactoryReset = () => {
+    try {
+      DATA_KEYS.forEach(key => {
+        localStorage.removeItem(key);
+      });
+      toast({
+        title: "System Reset",
+        description: "The application has been reset to its factory defaults. The page will now reload.",
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+       toast({ variant: "destructive", title: "Reset Failed", description: "Could not reset the application data." });
+    }
+  }
 
   if (!isClient) {
     return (
@@ -425,6 +443,40 @@ export default function SettingsPage() {
                   Restore from Backup
               </Button>
           </CardContent>
+      </Card>
+
+      <Card id="danger-zone">
+        <CardHeader>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <CardDescription>These actions are irreversible. Please proceed with caution.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <ServerCrash className="mr-2 h-4 w-4" />
+                Factory Reset
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete all transactions, inventory, and settings from your local device.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleFactoryReset}>
+                  Yes, reset everything
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <p className="text-sm text-muted-foreground mt-2">
+            This will clear all data and restore the application to its initial state.
+          </p>
+        </CardContent>
       </Card>
 
     </div>
