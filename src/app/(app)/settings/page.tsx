@@ -97,9 +97,12 @@ export default function SettingsPage() {
   
   useEffect(() => {
     setIsClient(true);
+    // Move reset into a timeout to prevent flushSync errors during hydration
     setTimeout(() => {
-      const storedSettings = getSettings();
-      reset(storedSettings);
+        const storedSettings = getSettings();
+        if (storedSettings) {
+            reset(storedSettings);
+        }
     }, 0);
   }, [reset]);
 
@@ -121,7 +124,10 @@ export default function SettingsPage() {
     } else {
       newLockedTabs = currentLockedTabs.filter(id => id !== tabId);
     }
-    setValue("lockedTabs", newLockedTabs, { shouldDirty: true });
+    // Defer the update to prevent flushSync error
+    setTimeout(() => {
+      setValue("lockedTabs", newLockedTabs, { shouldDirty: true });
+    }, 0);
   };
 
   const handleBackup = () => {
@@ -424,3 +430,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
