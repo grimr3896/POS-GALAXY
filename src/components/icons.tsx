@@ -4,6 +4,8 @@ export const Icons = {
   logo: (props: SVGProps<SVGSVGElement>) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -12,9 +14,9 @@ export const Icons = {
       strokeLinejoin="round"
       {...props}
     >
-      <polygon points="12 2 2 7 12 12 22 7 12 2" />
-      <polyline points="2 17 12 22 22 17" />
-      <polyline points="2 12 12 17 22 12" />
+      <path d="M12 2L2 7 12 12 22 7 12 2z"/>
+      <path d="M2 17l10 5 10-5"/>
+      <path d="M2 12l10 5 10-5"/>
     </svg>
   ),
 };
