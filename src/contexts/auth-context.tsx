@@ -4,7 +4,7 @@
 import type { User, OrderItem } from "@/lib/types";
 import { findUserByCardId } from "@/lib/api";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 interface AuthContextType {
   user: User | null;
@@ -17,54 +17,39 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// A default admin user to grant full access
+const defaultAdminUser: User = {
+  id: 0,
+  name: "Admin",
+  role: "Admin",
+  companyCardId: "admin",
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(defaultAdminUser);
+  const [loading, setLoading] = useState(false); // No need to load from storage
   const [pendingOrder, setPendingOrder] = useState<OrderItem[] | null>(null);
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("pos-user");
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (e) {
-      console.error("Failed to parse user from localStorage", e);
-      localStorage.removeItem("pos-user");
-    } finally {
-      setLoading(false);
+    // Since we always have a user, just ensure we are on a valid page.
+    // This simplifies the logic and removes the redirect loop possibility.
+    if (router && !loading && window.location.pathname.endsWith('/login')) {
+      router.replace('/dashboard');
     }
-  }, []);
-  
-  useEffect(() => {
-    if (!loading) {
-      const isAuthPage = pathname === "/login";
-      if (!user && !isAuthPage) {
-        router.replace("/login");
-      }
-      if (user && isAuthPage) {
-        router.replace("/dashboard");
-      }
-    }
-  }, [user, loading, pathname, router]);
+  }, [loading, router]);
 
   const login = async (companyCardId: string): Promise<boolean> => {
-    const foundUser = findUserByCardId(companyCardId);
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem("pos-user", JSON.stringify(foundUser));
-      router.push("/dashboard");
-      return true;
-    }
-    return false;
+    // Login logic is now bypassed, but we keep the function for compatibility
+    // In this simplified setup, we always stay logged in as the default admin
+    return true;
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem("pos-user");
-    router.push("/login");
+    // Logout is effectively disabled in this simplified setup.
+    // You could optionally redirect to a "logged out" screen, but for a single-user
+    // terminal, this might not be necessary.
+    console.log("Logout action called, but the system is in single-user mode.");
   };
 
   const value = { user, loading, login, logout, pendingOrder, setPendingOrder };

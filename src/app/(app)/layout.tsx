@@ -18,34 +18,28 @@ import { UserNav } from "@/components/user-nav";
 import { LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/contexts/auth-context";
-import { hasPermission } from "@/lib/permissions";
-import type { Permission } from "@/lib/types";
 
-const navItems: { href: string; label: string; icon: React.ElementType, permission: Permission }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: 'page:dashboard' },
-  { href: "/pos", label: "Point of Sale", icon: ShoppingCart, permission: 'page:pos' },
-  { href: "/inventory", label: "Inventory", icon: Archive, permission: 'page:inventory' },
-  { href: "/sales-history", label: "Sales History", icon: History, permission: 'page:sales-history' },
-  { href: "/expenses", label: "Expenses", icon: Landmark, permission: 'page:expenses' },
-  { href: "/cash-up", label: "Cash Up", icon: Wallet, permission: 'page:reports' },
-  { href: "/reports", label: "Reports", icon: FileText, permission: 'page:reports' },
-  { href: "/employees", label: "Employees", icon: Users, permission: 'page:employees' },
-  { href: "/settings", label: "Settings", icon: Settings, permission: 'page:settings' },
+const navItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/pos", label: "Point of Sale", icon: ShoppingCart },
+  { href: "/inventory", label: "Inventory", icon: Archive },
+  { href: "/sales-history", label: "Sales History", icon: History },
+  { href: "/expenses", label: "Expenses", icon: Landmark },
+  { href: "/cash-up", label: "Cash Up", icon: Wallet },
+  { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/employees", label: "Employees", icon: Users },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
 
   const getPageTitle = () => {
     const currentNavItem = navItems.find((item) => pathname.startsWith(item.href));
     return currentNavItem ? currentNavItem.label : "Galaxy Inn";
   };
   
-  const visibleNavItems = navItems.filter(item => hasPermission(user, item.permission));
-
   return (
     <SidebarProvider>
       <Sidebar collapsible={isMobile ? "offcanvas" : "icon"} className="border-r border-sidebar-border">
@@ -59,7 +53,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {visibleNavItems.map((item) => (
+            {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton

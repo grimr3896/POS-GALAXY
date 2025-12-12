@@ -32,8 +32,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useAuth } from "@/contexts/auth-context";
-import { hasPermission } from "@/lib/permissions";
 import { saveProductsFromCSV, getSettings, saveSettings } from "@/lib/api";
 import type { Role, Permission } from "@/lib/types";
 import { rolePermissions } from "@/lib/types";
@@ -76,8 +74,6 @@ const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_
 
 export default function SettingsPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const canUpdateSettings = hasPermission(user, 'settings:update');
   const restoreInputRef = React.useRef<HTMLInputElement>(null);
   const csvInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -211,7 +207,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="appName">Application Name</Label>
-              <Input id="appName" {...register("appName")} disabled={!canUpdateSettings} />
+              <Input id="appName" {...register("appName")} />
               {errors.appName && <p className="text-sm text-destructive">{errors.appName.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -221,7 +217,7 @@ export default function SettingsPage() {
                   name="currency"
                   control={control}
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!canUpdateSettings}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select currency" />
                       </SelectTrigger>
@@ -236,76 +232,70 @@ export default function SettingsPage() {
               </div>
                <div className="space-y-2">
                 <Label htmlFor="vatRate">VAT Rate (%)</Label>
-                <Input id="vatRate" type="number" {...register("vatRate")} disabled={!canUpdateSettings} />
+                <Input id="vatRate" type="number" {...register("vatRate")} />
                 {errors.vatRate && <p className="text-sm text-destructive">{errors.vatRate.message}</p>}
               </div>
             </div>
-             {canUpdateSettings && (
-                <div className="flex justify-end pt-4">
-                    <Button type="submit">Save Settings</Button>
-                </div>
-            )}
+            <div className="flex justify-end pt-4">
+                <Button type="submit">Save Settings</Button>
+            </div>
           </CardContent>
         </Card>
       </form>
       
-      {canUpdateSettings && (
-        <Card>
-            <CardHeader>
-                <CardTitle>Data Import</CardTitle>
-                <CardDescription>
-                    Load product data from an external CSV file. This will update existing products with the same SKU or create new ones.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-2">
-                    <Label htmlFor="csv-import">Product CSV File</Label>
-                     <Input
-                        ref={csvInputRef}
-                        id="csv-import"
-                        type="file"
-                        className="hidden"
-                        accept=".csv"
-                        onChange={handleProductImport}
-                    />
-                    <Button variant="outline" onClick={() => csvInputRef.current?.click()} className="w-full sm:w-auto">
-                        <FileUp className="mr-2 h-4 w-4" />
-                        Import Products from CSV
-                    </Button>
-                    <p className="text-xs text-muted-foreground pt-2">
-                        Required columns: `sku,name,type,buyPrice,sellPrice,thresholdQuantity,quantity,image`
-                    </p>
-                </div>
-            </CardContent>
-        </Card>
-      )}
+      <Card>
+          <CardHeader>
+              <CardTitle>Data Import</CardTitle>
+              <CardDescription>
+                  Load product data from an external CSV file. This will update existing products with the same SKU or create new ones.
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+              <div className="space-y-2">
+                  <Label htmlFor="csv-import">Product CSV File</Label>
+                   <Input
+                      ref={csvInputRef}
+                      id="csv-import"
+                      type="file"
+                      className="hidden"
+                      accept=".csv"
+                      onChange={handleProductImport}
+                  />
+                  <Button variant="outline" onClick={() => csvInputRef.current?.click()} className="w-full sm:w-auto">
+                      <FileUp className="mr-2 h-4 w-4" />
+                      Import Products from CSV
+                  </Button>
+                  <p className="text-xs text-muted-foreground pt-2">
+                      Required columns: `sku,name,type,buyPrice,sellPrice,thresholdQuantity,quantity,image`
+                  </p>
+              </div>
+          </CardContent>
+      </Card>
 
-      {canUpdateSettings && (
-         <Card>
-            <CardHeader>
-                <CardTitle>Data Management</CardTitle>
-                <CardDescription>Backup all application data or restore it from a file.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col sm:flex-row gap-4">
-                 <Button onClick={handleBackup}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Backup All Data
-                </Button>
-                <Input
-                    ref={restoreInputRef}
-                    id="restore-file"
-                    type="file"
-                    className="hidden"
-                    accept=".json"
-                    onChange={handleRestore}
-                />
-                <Button variant="outline" onClick={() => restoreInputRef.current?.click()}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Restore from Backup
-                </Button>
-            </CardContent>
-        </Card>
-      )}
+       <Card>
+          <CardHeader>
+              <CardTitle>Data Management</CardTitle>
+              <CardDescription>Backup all application data or restore it from a file.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row gap-4">
+               <Button onClick={handleBackup}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Backup All Data
+              </Button>
+              <Input
+                  ref={restoreInputRef}
+                  id="restore-file"
+                  type="file"
+                  className="hidden"
+                  accept=".json"
+                  onChange={handleRestore}
+              />
+              <Button variant="outline" onClick={() => restoreInputRef.current?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Restore from Backup
+              </Button>
+          </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -317,7 +307,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="idleTimeout">Idle Timeout (seconds)</Label>
-                <Input id="idleTimeout" type="number" {...register("idleTimeout")} placeholder="e.g., 300 for 5 minutes" disabled={!canUpdateSettings}/>
+                <Input id="idleTimeout" type="number" {...register("idleTimeout")} placeholder="e.g., 300 for 5 minutes" />
                 <p className="text-xs text-muted-foreground">Automatically log out after a period of inactivity. Set to 0 to disable.</p>
                 {errors.idleTimeout && <p className="text-sm text-destructive">{errors.idleTimeout.message}</p>}
             </div>
@@ -359,11 +349,9 @@ export default function SettingsPage() {
                     </TableBody>
                 </Table>
             </div>
-             {canUpdateSettings && (
-                <div className="flex justify-end pt-4">
-                    <Button type="submit">Save Security Settings</Button>
-                </div>
-            )}
+            <div className="flex justify-end pt-4">
+                <Button type="submit">Save Security Settings</Button>
+            </div>
         </CardContent>
       </Card>
     </div>

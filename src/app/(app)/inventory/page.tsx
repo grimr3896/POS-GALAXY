@@ -8,8 +8,6 @@ import type { User, Product, InventoryItem } from "@/lib/types";
 import { InventoryTable } from "./inventory-table";
 import { ProductFormSheet } from "./product-form-sheet";
 import { PasswordPromptDialog } from "./password-prompt-dialog";
-import { useAuth } from "@/contexts/auth-context";
-import { hasPermission } from "@/lib/permissions";
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
@@ -19,7 +17,6 @@ export default function InventoryPage() {
   const [editingProduct, setEditingProduct] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
   const [productIdToDelete, setProductIdToDelete] = useState<number | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -33,30 +30,18 @@ export default function InventoryPage() {
   }, [fetchData]);
   
   const handleAddProduct = () => {
-    if (hasPermission(user, 'inventory:create')) {
-      setEditingProduct(null);
-      setIsSheetOpen(true);
-    } else {
-      toast({ variant: 'destructive', title: 'Permission Denied' });
-    }
+    setEditingProduct(null);
+    setIsSheetOpen(true);
   };
 
   const handleEditRequest = (product: Product & { inventory?: InventoryItem }) => {
-    if (hasPermission(user, 'inventory:update')) {
-      setEditingProduct(product);
-      setIsSheetOpen(true);
-    } else {
-      toast({ variant: 'destructive', title: 'Permission Denied', description: "You don't have permission to edit products." });
-    }
+    setEditingProduct(product);
+    setIsSheetOpen(true);
   };
 
   const handleDeleteRequest = (productId: number) => {
-    if (hasPermission(user, 'inventory:delete')) {
-      setProductIdToDelete(productId);
-      setIsPasswordDialogOpen(true);
-    } else {
-      toast({ variant: 'destructive', title: 'Permission Denied', description: "You don't have permission to delete products." });
-    }
+    setProductIdToDelete(productId);
+    setIsPasswordDialogOpen(true);
   };
 
 
@@ -110,9 +95,9 @@ export default function InventoryPage() {
         onAddProduct={handleAddProduct}
         onEditProduct={handleEditRequest}
         onDeleteProduct={handleDeleteRequest}
-        canAdd={hasPermission(user, 'inventory:create')}
-        canEdit={hasPermission(user, 'inventory:update')}
-        canDelete={hasPermission(user, 'inventory:delete')}
+        canAdd={true}
+        canEdit={true}
+        canDelete={true}
       />
       {isSheetOpen && (
         <ProductFormSheet 

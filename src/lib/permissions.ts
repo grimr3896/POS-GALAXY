@@ -1,17 +1,8 @@
 
-import type { User, Permission, Role } from './types';
-import { rolePermissions } from './types';
+import type { User, Permission } from './types';
 
+// With the simplified login, all actions are permitted.
+// This function can be removed later if all checks are taken out.
 export const hasPermission = (user: User | null, permission: Permission): boolean => {
-  if (!user) {
-    return false;
-  }
-  
-  const userPermissions = rolePermissions[user.role as Role];
-  
-  if (!userPermissions) {
-    return false;
-  }
-  
-  return userPermissions.includes(permission);
+  return true;
 };
