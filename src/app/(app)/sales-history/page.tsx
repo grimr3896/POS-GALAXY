@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
@@ -38,6 +39,8 @@ export default function SalesHistoryPage() {
 
   useEffect(() => {
     fetchData();
+    // Set initial date range on client to avoid hydration mismatch
+    setDateRange({ from: new Date(), to: new Date() });
   }, [fetchData]);
 
   const filteredTransactions = useMemo(() => {
