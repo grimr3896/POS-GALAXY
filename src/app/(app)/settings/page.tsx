@@ -100,6 +100,8 @@ export default function SettingsPage() {
   const onSubmit = (data: SettingsFormValues) => {
     saveSettings(data);
     reset(data); // update form state to reflect saved changes
+    // Dispatch a custom event to notify other parts of the app (like the layout) that settings have changed
+    window.dispatchEvent(new CustomEvent('settings-updated'));
     toast({
       title: "Settings Saved",
       description: "Your new settings have been applied. Some changes may require a page reload.",

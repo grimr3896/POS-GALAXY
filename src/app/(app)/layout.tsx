@@ -46,11 +46,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [passwordPrompt, setPasswordPrompt] = useState<{ isOpen: boolean, targetHref: string | null }>({ isOpen: false, targetHref: null });
 
   useEffect(() => {
+    // Function to update settings state
+    const handleSettingsUpdate = () => {
+      setSettings(getSettings());
+    };
+    
+    // Listen for custom event
+    window.addEventListener('settings-updated', handleSettingsUpdate);
+    
     // On mount, read session storage for any tabs unlocked in this session
     const sessionUnlocked = sessionStorage.getItem("unlockedTabs");
     if (sessionUnlocked) {
       setUnlockedTabs(JSON.parse(sessionUnlocked));
     }
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('settings-updated', handleSettingsUpdate);
+    };
   }, []);
 
   const getPageTitle = () => {
