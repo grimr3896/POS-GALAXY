@@ -23,6 +23,7 @@ export default function SalesHistoryPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { setPendingOrder } = useAuth();
+  const [isClient, setIsClient] = useState(false);
 
   // Filtering state
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,15 +40,16 @@ export default function SalesHistoryPage() {
   }, []);
 
   useEffect(() => {
+    setIsClient(true);
     fetchData();
     // Set initial date range on client to avoid hydration mismatch
-    setDateRange({ from: new Date(), to: new Date() });
+    const today = new Date();
+    setDateRange({ from: today, to: today });
   }, [fetchData]);
 
   const filteredTransactions = useMemo(() => {
     let filtered = transactions;
 
-    // Apply search term filter
     if (searchTerm) {
       const lowercasedTerm = searchTerm.toLowerCase();
       filtered = filtered.filter((t) => {
@@ -59,12 +61,10 @@ export default function SalesHistoryPage() {
       });
     }
 
-    // Apply employee filter
     if (employeeFilter !== "all") {
        filtered = filtered.filter((t) => t.userId === parseInt(employeeFilter));
     }
 
-    // Apply date range filter
     if (dateRange.from) {
         const fromDate = new Date(dateRange.from);
         fromDate.setHours(0,0,0,0);
@@ -126,6 +126,10 @@ export default function SalesHistoryPage() {
     setIsPasswordDialogOpen(false);
     setTransactionToReverse(null);
   };
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-6">

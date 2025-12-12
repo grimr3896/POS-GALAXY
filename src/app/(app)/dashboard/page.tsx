@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { EndDayDialog } from "./end-day-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 type DashboardData = {
   todaysSales: number;
@@ -30,6 +33,11 @@ export default function DashboardPage() {
   const [isEndDayDialogOpen, setIsEndDayDialogOpen] = useState(false);
   const { toast } = useToast();
    const [dayEnded, setDayEnded] = useState(false);
+   const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const fetchData = () => {
     setLoading(true);
@@ -39,13 +47,14 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    // This should only run on the client
-    fetchData();
-  }, []);
+    if (isClient) {
+        fetchData();
+    }
+  }, [isClient]);
 
   const handleEndDayConfirm = () => {
     try {
-        const report = endDayProcess();
+        endDayProcess();
         toast({
             title: "Day Ended Successfully",
             description: `Daily report for ${new Date().toLocaleDateString()} has been generated and transactions are locked.`,
@@ -62,6 +71,23 @@ export default function DashboardPage() {
         setIsEndDayDialogOpen(false);
     }
   };
+
+  if (!isClient) {
+    return (
+        <div className="flex flex-col gap-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+                <Skeleton className="h-80" />
+                <Skeleton className="h-80" />
+            </div>
+        </div>
+    );
+  }
 
   if (dayEnded) {
     return (

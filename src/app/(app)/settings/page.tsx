@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -36,6 +37,8 @@ import * as z from "zod";
 import { saveProductsFromCSV, getSettings, saveSettings } from "@/lib/api";
 import type { AppSettings } from "@/lib/types";
 import { Download, Upload, FileUp, LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet, Eye, EyeOff } from "lucide-react";
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
@@ -77,6 +80,7 @@ export default function SettingsPage() {
   const restoreInputRef = React.useRef<HTMLInputElement>(null);
   const csvInputRef = React.useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
   const {
     register,
@@ -92,9 +96,7 @@ export default function SettingsPage() {
   });
   
   useEffect(() => {
-    // Fetch settings from localStorage only on the client-side after mount
-    // to prevent hydration mismatch errors.
-    // Wrap in setTimeout to avoid flushSync errors during hydration.
+    setIsClient(true);
     setTimeout(() => {
       const storedSettings = getSettings();
       reset(storedSettings);
@@ -104,7 +106,6 @@ export default function SettingsPage() {
   const onSubmit = (data: SettingsFormValues) => {
     saveSettings(data);
     reset(data); // update form state to reflect saved changes
-    // Dispatch a custom event to notify other parts of the app (like the layout) that settings have changed
     window.dispatchEvent(new CustomEvent('settings-updated'));
     toast({
       title: "Settings Saved",
@@ -174,7 +175,6 @@ export default function SettingsPage() {
                     description: "Data has been restored. Please reload the page to see the changes.",
                     duration: 10000,
                  });
-                 // Reset file input
                  if(restoreInputRef.current) restoreInputRef.current.value = "";
                  window.location.reload();
             } else {
@@ -214,6 +214,25 @@ export default function SettingsPage() {
     reader.readAsText(file);
   };
 
+  if (!isClient) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

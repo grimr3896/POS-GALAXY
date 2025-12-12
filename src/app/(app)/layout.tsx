@@ -23,6 +23,7 @@ import { getSettings } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { PasswordPromptDialog } from "@/app/(app)/inventory/password-prompt-dialog";
 import { useToast } from "@/hooks/use-toast";
+import type { AppSettings } from "@/lib/types";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -42,26 +43,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
-  const [settings, setSettings] = useState(getSettings());
+  const [settings, setSettings] = useState<AppSettings | null>(null);
   const [unlockedTabs, setUnlockedTabs] = useState<string[]>([]);
   const [passwordPrompt, setPasswordPrompt] = useState<{ isOpen: boolean, targetHref: string | null }>({ isOpen: false, targetHref: null });
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Function to update settings state
+    setIsClient(true);
+
     const handleSettingsUpdate = () => {
       setSettings(getSettings());
     };
     
-    // Listen for custom event
-    window.addEventListener('settings-updated', handleSettingsUpdate);
-    
-    // On mount, read session storage for any tabs unlocked in this session
+    setSettings(getSettings());
+
     const sessionUnlocked = sessionStorage.getItem("unlockedTabs");
     if (sessionUnlocked) {
       setUnlockedTabs(JSON.parse(sessionUnlocked));
     }
-
-    // Cleanup listener on unmount
+    
+    window.addEventListener('settings-updated', handleSettingsUpdate);
+    
     return () => {
       window.removeEventListener('settings-updated', handleSettingsUpdate);
     };
@@ -73,6 +75,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
   
   const handleNavClick = (e: React.MouseEvent, href: string) => {
+      if (!settings) return;
+      
       const isLocked = settings.lockedTabs?.includes(href);
       const isSessionUnlocked = unlockedTabs.includes(href);
 
@@ -80,10 +84,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           e.preventDefault();
           setPasswordPrompt({ isOpen: true, targetHref: href });
       }
-      // If not locked or already unlocked for the session, the Link will navigate as usual.
   };
 
   const handlePasswordConfirm = (password: string) => {
+    if (!settings) return;
     const masterPassword = settings.masterPassword || "DARKSULPHUR";
     const targetHref = passwordPrompt.targetHref;
 
@@ -103,7 +107,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
     setPasswordPrompt({ isOpen: false, targetHref: null });
   };
-
+  
+  if (!isClient || !settings) {
+    // Render a loading state or null on the server and initial client render
+    return null;
+  }
 
   return (
     <SidebarProvider>
@@ -112,7 +120,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex h-10 items-center gap-2 px-2">
             <Icons.logo className="size-6 shrink-0 text-sidebar-primary" />
             <span className="truncate text-lg font-semibold text-sidebar-foreground">
-              Galaxy Inn
+              {settings.appName}
             </span>
           </div>
         </SidebarHeader>
