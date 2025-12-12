@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -16,6 +15,7 @@ import type { Transaction } from "@/lib/types";
 import { Icons } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
 import { useRef } from "react";
+import { getSettings } from "@/lib/api";
 
 interface ReceiptModalProps {
   transaction: Transaction;
@@ -26,9 +26,11 @@ interface ReceiptModalProps {
 export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModalProps) {
   const { user } = useAuth();
   const receiptRef = useRef<HTMLDivElement>(null);
+  const settings = getSettings();
   
   const handlePrint = () => {
     const sale = {
+        appName: settings.appName || "Galaxy Inn",
         datetime: new Date(transaction.timestamp).toLocaleString(),
         cashier: user?.name || 'Unknown',
         items: transaction.items.map(i => ({
@@ -64,13 +66,13 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
                 .center { text-align: center; }
                 .bold { font-weight: bold; }
                 .line { border-top: 1px dashed #000; margin: 4px 0; }
-                .item-row { display: grid; grid-template-columns: 1fr auto; gap: 4px; }
+                .item-row { display: grid; grid-template-columns: auto 1fr; gap: 4px; }
                 .item-name { word-break: break-all; }
                 .totals-row { display: grid; grid-template-columns: 1fr auto; gap: 2px; }
             </style>
         </head>
         <body>
-            <div class="center bold">GALAXY INN BAR</div>
+            <div class="center bold">${sale.appName}</div>
             <div class="center">Official Receipt</div>
             <div class="line"></div>
             <div>Date: ${sale.datetime}</div>
@@ -79,10 +81,9 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
             <div class="line"></div>
 
             ${sale.items.map(i => `
-                <div>${i.qty} x ${i.name}</div>
                 <div class="item-row">
-                    <span class="item-name"></span>
-                    <span>${i.total}</span>
+                    <span>${i.qty}x ${i.name}</span>
+                    <span style="text-align: right;">${i.total}</span>
                 </div>`
             ).join("")}
 
@@ -110,8 +111,8 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
             </div>
 
             <div class="line"></div>
-            <div class="center">Thank you!</div>
-            <div class="center">Please drink responsibly</div>
+            <div class="center">Thank you for your business!</div>
+            <div class="center">Powered by Galaxy POS</div>
         </body>
         </html>
     `;
@@ -145,7 +146,7 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
         <div ref={receiptRef}>
           <DialogHeader className="text-center items-center">
             <Icons.logo className="h-10 w-10 text-primary" />
-            <DialogTitle className="text-xl">Galaxy Inn</DialogTitle>
+            <DialogTitle className="text-xl">{settings.appName}</DialogTitle>
             <DialogDescription>
               Transaction Receipt
             </DialogDescription>
@@ -189,7 +190,7 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
                     <span>Ksh {(transaction.total - (transaction.totalTax || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                    <span>VAT (16% included):</span>
+                    <span>VAT ({settings.vatRate}% included):</span>
                     <span>Ksh {(transaction.totalTax || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between font-bold text-base mt-1">
@@ -218,11 +219,16 @@ export function ReceiptModal({ transaction, isOpen, onOpenChange }: ReceiptModal
             </div>
           <div className="mt-6 text-center text-xs text-muted-foreground">
             Thank you for your business!
+            <br />
+            Powered by Galaxy POS
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-col gap-2">
           <Button onClick={handlePrint} className="w-full">
             Print Receipt
+          </Button>
+           <Button onClick={() => onOpenChange(false)} className="w-full" variant="outline">
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>
