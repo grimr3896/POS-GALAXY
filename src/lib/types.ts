@@ -121,6 +121,7 @@ export type AppSettings = {
     currency: string;
     idleTimeout: number;
     vatRate: number;
+    masterPassword?: string;
 }
 
 export type Permission = 

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getUsers, saveUser, deleteUser } from "@/lib/api";
+import { getUsers, saveUser, deleteUser, getSettings } from "@/lib/api";
 import type { User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeTable } from "./employees-table";
@@ -44,7 +44,10 @@ export default function EmployeesPage() {
   };
 
   const handlePasswordConfirm = (password: string) => {
-    if (password === "626-jarvis") { // This should be a more secure check
+    const settings = getSettings();
+    const masterPassword = settings.masterPassword || "626-jarvis";
+    
+    if (password === masterPassword) { 
         if(employeeIdToDelete !== null) {
             try {
                 deleteUser(employeeIdToDelete);

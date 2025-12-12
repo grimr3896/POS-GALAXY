@@ -83,6 +83,7 @@ const defaultSettings: AppSettings = {
     currency: "KSH",
     idleTimeout: 300,
     vatRate: 16,
+    masterPassword: "626-jarvis",
 };
 
 
@@ -336,7 +337,7 @@ export const saveTransaction = (
     
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
     const totalTax = transactionItems.reduce((acc, item) => acc + item.lineTax, 0);
-    const profit = total - totalCost; // Profit is total revenue minus cost, tax is part of revenue
+    const profit = total - totalCost - totalTax;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -540,7 +541,7 @@ export const getDashboardData = () => {
 
         t.items.forEach(item => {
             const productName = item.productName;
-            const itemProfit = item.lineTotal - item.lineCost;
+            const itemProfit = item.lineTotal - item.lineCost - item.lineTax;
             
             acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
             acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;

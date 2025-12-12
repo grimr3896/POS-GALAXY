@@ -2,12 +2,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getProductsWithInventory, saveProduct, deleteProduct } from "@/lib/api";
+import { getProductsWithInventory, saveProduct, deleteProduct, getSettings } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import type { User, Product, InventoryItem } from "@/lib/types";
+import type { Product, InventoryItem } from "@/lib/types";
 import { InventoryTable } from "./inventory-table";
 import { ProductFormSheet } from "./product-form-sheet";
 import { PasswordPromptDialog } from "./password-prompt-dialog";
+
+type ActionType = "edit" | "delete";
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<(Product & { inventory?: InventoryItem })[]>([]);
@@ -15,7 +17,7 @@ export default function InventoryPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<(Product & { inventory?: InventoryItem }) | null>(null);
-  const [productIdToDelete, setProductIdToDelete] = useState<number | null>(null);
+  const [actionPending, setActionPending] = useState<{ type: ActionType; data: any } | null>(null);
   const { toast } = useToast();
 
   const fetchData = useCallback(() => {
@@ -35,27 +37,32 @@ export default function InventoryPage() {
   };
 
   const handleEditRequest = (product: Product & { inventory?: InventoryItem }) => {
-    setEditingProduct(product);
-    setIsSheetOpen(true);
+    setActionPending({ type: "edit", data: product });
+    setIsPasswordDialogOpen(true);
   };
 
   const handleDeleteRequest = (productId: number) => {
-    setProductIdToDelete(productId);
+    setActionPending({ type: "delete", data: productId });
     setIsPasswordDialogOpen(true);
   };
 
 
   const handlePasswordConfirm = (password: string) => {
-    // In a real app, this would be a proper password/permission check
-    if (password === "626-jarvis") {
-      if (productIdToDelete !== null) {
-          try {
-            deleteProduct(productIdToDelete);
-            toast({ title: "Product Deleted", description: "The product has been removed." });
-            fetchData();
-          } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Could not delete the product." });
-          }
+    const settings = getSettings();
+    const masterPassword = settings.masterPassword || "626-jarvis";
+    
+    if (password === masterPassword) {
+      if (actionPending?.type === "edit") {
+        setEditingProduct(actionPending.data);
+        setIsSheetOpen(true);
+      } else if (actionPending?.type === "delete") {
+        try {
+          deleteProduct(actionPending.data);
+          toast({ title: "Product Deleted", description: "The product has been removed." });
+          fetchData();
+        } catch (error) {
+          toast({ variant: "destructive", title: "Error", description: "Could not delete the product." });
+        }
       }
     } else {
       toast({
@@ -66,7 +73,7 @@ export default function InventoryPage() {
     }
     
     setIsPasswordDialogOpen(false);
-    setProductIdToDelete(null);
+    setActionPending(null);
   };
   
   const handleFormSubmit = (values: any) => {
@@ -111,8 +118,8 @@ export default function InventoryPage() {
         isOpen={isPasswordDialogOpen}
         onOpenChange={setIsPasswordDialogOpen}
         onConfirm={handlePasswordConfirm}
-        title="Enter Password to Delete Product"
-        description="You need administrator permissions to delete a product. This action cannot be undone."
+        title="Enter Admin Password"
+        description="Administrator password is required to perform this action."
       />
     </div>
   );

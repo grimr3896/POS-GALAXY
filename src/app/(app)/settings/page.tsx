@@ -42,6 +42,7 @@ const settingsSchema = z.object({
   currency: z.string(),
   idleTimeout: z.coerce.number().min(0),
   vatRate: z.coerce.number().min(0).max(100, "VAT rate cannot exceed 100%."),
+  masterPassword: z.string().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -236,11 +237,72 @@ export default function SettingsPage() {
                 {errors.vatRate && <p className="text-sm text-destructive">{errors.vatRate.message}</p>}
               </div>
             </div>
-            <div className="flex justify-end pt-4">
-                <Button type="submit">Save Settings</Button>
-            </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Security</CardTitle>
+            <CardDescription>
+              Manage passwords and access control.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="masterPassword">Master Password</Label>
+                <Input id="masterPassword" type="password" {...register("masterPassword")} placeholder="Enter new password to change" />
+                <p className="text-xs text-muted-foreground">Used for critical actions like editing or deleting inventory. Leave blank to keep the current password.</p>
+              </div>
+              <div className="space-y-2">
+                  <Label htmlFor="idleTimeout">Idle Timeout (seconds)</Label>
+                  <Input id="idleTimeout" type="number" {...register("idleTimeout")} placeholder="e.g., 300 for 5 minutes" />
+                  <p className="text-xs text-muted-foreground">Automatically log out after a period of inactivity. Set to 0 to disable.</p>
+                  {errors.idleTimeout && <p className="text-sm text-destructive">{errors.idleTimeout.message}</p>}
+              </div>
+
+              <Separator />
+
+              <div>
+                  <h3 className="text-lg font-medium">Role Permissions</h3>
+                  <p className="text-sm text-muted-foreground">Define which tabs and actions each role can access.</p>
+              </div>
+              <div className="overflow-x-auto">
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                              <TableHead className="w-[150px]">Permission</TableHead>
+                              {roles.map(role => <TableHead key={role} className="text-center">{role}</TableHead>)}
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {allPermissions.map(group => (
+                              <React.Fragment key={group.group}>
+                                  <TableRow className="bg-muted/50">
+                                      <TableCell colSpan={roles.length + 1} className="font-semibold">{group.group}</TableCell>
+                                  </TableRow>
+                                  {group.permissions.map(permission => (
+                                      <TableRow key={permission.id}>
+                                          <TableCell className="pl-6 text-muted-foreground">{permission.label}</TableCell>
+                                          {roles.map(role => (
+                                              <TableCell key={`${role}-${permission.id}`} className="text-center">
+                                                  {rolePermissions[role].includes(permission.id) 
+                                                      ? <Check className="h-5 w-5 text-green-500 mx-auto" /> 
+                                                      : <X className="h-5 w-5 text-destructive mx-auto" />}
+                                              </TableCell>
+                                          ))}
+                                      </TableRow>
+                                  ))}
+                              </React.Fragment>
+                          ))}
+                      </TableBody>
+                  </Table>
+              </div>
+          </CardContent>
+        </Card>
+        
+        <div className="flex justify-end">
+            <Button type="submit">Save All Settings</Button>
+        </div>
       </form>
       
       <Card>
@@ -297,63 +359,6 @@ export default function SettingsPage() {
           </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Security & Permissions</CardTitle>
-          <CardDescription>
-            Control access levels and security features.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="idleTimeout">Idle Timeout (seconds)</Label>
-                <Input id="idleTimeout" type="number" {...register("idleTimeout")} placeholder="e.g., 300 for 5 minutes" />
-                <p className="text-xs text-muted-foreground">Automatically log out after a period of inactivity. Set to 0 to disable.</p>
-                {errors.idleTimeout && <p className="text-sm text-destructive">{errors.idleTimeout.message}</p>}
-            </div>
-
-            <Separator />
-
-            <div>
-                <h3 className="text-lg font-medium">Role Permissions</h3>
-                <p className="text-sm text-muted-foreground">Define which tabs and actions each role can access.</p>
-            </div>
-             <div className="overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[150px]">Permission</TableHead>
-                            {roles.map(role => <TableHead key={role} className="text-center">{role}</TableHead>)}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {allPermissions.map(group => (
-                            <React.Fragment key={group.group}>
-                                <TableRow className="bg-muted/50">
-                                    <TableCell colSpan={roles.length + 1} className="font-semibold">{group.group}</TableCell>
-                                </TableRow>
-                                {group.permissions.map(permission => (
-                                    <TableRow key={permission.id}>
-                                        <TableCell className="pl-6 text-muted-foreground">{permission.label}</TableCell>
-                                        {roles.map(role => (
-                                            <TableCell key={`${role}-${permission.id}`} className="text-center">
-                                                {rolePermissions[role].includes(permission.id) 
-                                                    ? <Check className="h-5 w-5 text-green-500 mx-auto" /> 
-                                                    : <X className="h-5 w-5 text-destructive mx-auto" />}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </React.Fragment>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-            <div className="flex justify-end pt-4">
-                <Button type="submit">Save Security Settings</Button>
-            </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

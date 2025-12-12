@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getExpenses, saveExpense, deleteExpense, getUsers } from "@/lib/api";
+import { getExpenses, saveExpense, deleteExpense, getUsers, getSettings } from "@/lib/api";
 import type { Expense, User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { ExpensesTable } from "./expenses-table";
@@ -53,7 +53,10 @@ export default function ExpensesPage() {
   };
   
   const handlePasswordConfirm = (password: string) => {
-    if (password !== "626-jarvis") {
+    const settings = getSettings();
+    const masterPassword = settings.masterPassword || "626-jarvis";
+    
+    if (password !== masterPassword) {
       toast({
         variant: "destructive",
         title: "Incorrect Password",
