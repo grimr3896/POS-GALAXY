@@ -94,8 +94,11 @@ export default function SettingsPage() {
   useEffect(() => {
     // Fetch settings from localStorage only on the client-side after mount
     // to prevent hydration mismatch errors.
-    const storedSettings = getSettings();
-    reset(storedSettings);
+    // Wrap in setTimeout to avoid flushSync errors during hydration.
+    setTimeout(() => {
+      const storedSettings = getSettings();
+      reset(storedSettings);
+    }, 0);
   }, [reset]);
 
   const onSubmit = (data: SettingsFormValues) => {
@@ -281,7 +284,7 @@ export default function SettingsPage() {
                   className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff /> : <Eye />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                 </Button>
                 <p className="text-xs text-muted-foreground">Used for critical actions like editing inventory or unlocking tabs. Leave blank to keep the current password.</p>
