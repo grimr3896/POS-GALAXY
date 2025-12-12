@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -28,6 +29,9 @@ interface ExpensesTableProps {
   onAddExpense: () => void;
   onEditExpense: (expense: Expense) => void;
   onDeleteExpense: (expenseId: number) => void;
+  canAdd: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 export function ExpensesTable({
@@ -37,6 +41,9 @@ export function ExpensesTable({
   onAddExpense,
   onEditExpense,
   onDeleteExpense,
+  canAdd,
+  canEdit,
+  canDelete
 }: ExpensesTableProps) {
   
   const getUserName = (userId: number) => {
@@ -51,7 +58,7 @@ export function ExpensesTable({
             <CardTitle>Expenses</CardTitle>
             <CardDescription>Track and manage your daily operational costs.</CardDescription>
           </div>
-          <Button onClick={onAddExpense}>Add Expense</Button>
+          {canAdd && <Button onClick={onAddExpense}>Add Expense</Button>}
         </div>
       </CardHeader>
       <CardContent>
@@ -63,9 +70,11 @@ export function ExpensesTable({
               <TableHead>Category</TableHead>
               <TableHead>Recorded By</TableHead>
               <TableHead className="text-right">Amount</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
+              {(canEdit || canDelete) && (
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -77,7 +86,7 @@ export function ExpensesTable({
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-28" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                     {(canEdit || canDelete) && <TableCell><Skeleton className="h-8 w-8" /></TableCell>}
                   </TableRow>
                 ))
               : data.map((expense) => (
@@ -89,27 +98,33 @@ export function ExpensesTable({
                     <TableCell className="text-right">
                       Ksh {expense.amount.toLocaleString()}
                     </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEditExpense(expense)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => onDeleteExpense(expense.id)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                     {(canEdit || canDelete) && (
+                        <TableCell>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                            {canEdit && (
+                                <DropdownMenuItem onClick={() => onEditExpense(expense)}>
+                                Edit
+                                </DropdownMenuItem>
+                            )}
+                            {canDelete && (
+                                <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => onDeleteExpense(expense.id)}
+                                >
+                                Delete
+                                </DropdownMenuItem>
+                            )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        </TableCell>
+                    )}
                   </TableRow>
                 ))}
             { !isLoading && data.length === 0 && (

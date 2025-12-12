@@ -96,20 +96,20 @@ export default function CashUpPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Cash Sales</CardTitle>
+                <CardTitle className="text-sm font-medium">Cash Payments</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.cashSales)}</div>
-                <p className="text-xs text-muted-foreground">From {summary.transactionCount} transactions</p>
+                <p className="text-xs text-muted-foreground">From all cash & split payments</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">M-Pesa Sales</CardTitle>
+                <CardTitle className="text-sm font-medium">M-Pesa Payments</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-sky-600">{formatCurrency(summary.mpesaSales)}</div>
-                 <p className="text-xs text-muted-foreground">From {summary.transactionCount} transactions</p>
+                 <p className="text-xs text-muted-foreground">From all M-Pesa & split payments</p>
               </CardContent>
             </Card>
           </div>
@@ -125,7 +125,7 @@ export default function CashUpPage() {
                 <div className="space-y-2 rounded-lg border bg-secondary p-4">
                     <Label className="font-semibold text-secondary-foreground">Expected Cash in Till</Label>
                     <p className="text-3xl font-bold text-primary">{formatCurrency(summary.expectedCash)}</p>
-                    <p className="text-xs text-muted-foreground">Total Cash Sales minus Change Given</p>
+                    <p className="text-xs text-muted-foreground">Total Cash Payments minus Change Given</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="actual-cash" className="font-semibold">Actual Cash Counted</Label>

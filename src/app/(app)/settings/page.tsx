@@ -34,7 +34,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/permissions";
-import { saveProductsFromCSV } from "@/lib/api";
+import { saveProductsFromCSV, getSettings, saveSettings } from "@/lib/api";
 import type { Role, Permission } from "@/lib/types";
 import { rolePermissions } from "@/lib/types";
 import { Check, X, Download, Upload, FileUp } from "lucide-react";
@@ -43,6 +43,7 @@ const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
   currency: z.string(),
   idleTimeout: z.coerce.number().min(0),
+  vatRate: z.coerce.number().min(0).max(100, "VAT rate cannot exceed 100%."),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -71,7 +72,7 @@ const allPermissions: { group: string, permissions: { id: Permission, label: str
     ]},
 ];
 
-const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses"];
+const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses", "settings"];
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -85,19 +86,19 @@ export default function SettingsPage() {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: {
-      appName: "Galaxy Inn",
-      currency: "KSH",
-      idleTimeout: 300,
-    },
+    defaultValues: () => getSettings(),
   });
+  
+  React.useEffect(() => {
+    reset(getSettings());
+  }, [reset]);
 
   const onSubmit = (data: SettingsFormValues) => {
-    // In a real app, you'd save these settings to a backend or localStorage
-    console.log(data);
+    saveSettings(data);
     toast({
       title: "Settings Saved",
       description: "Your new settings have been applied.",
@@ -233,6 +234,11 @@ export default function SettingsPage() {
                   )}
                 />
               </div>
+               <div className="space-y-2">
+                <Label htmlFor="vatRate">VAT Rate (%)</Label>
+                <Input id="vatRate" type="number" {...register("vatRate")} disabled={!canUpdateSettings} />
+                {errors.vatRate && <p className="text-sm text-destructive">{errors.vatRate.message}</p>}
+              </div>
             </div>
              {canUpdateSettings && (
                 <div className="flex justify-end pt-4">
@@ -363,5 +369,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    

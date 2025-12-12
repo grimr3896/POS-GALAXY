@@ -9,6 +9,7 @@ import { ExpensesTable } from "./expenses-table";
 import { ExpenseFormSheet } from "./expense-form-sheet";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordPromptDialog } from "@/app/(app)/inventory/password-prompt-dialog";
+import { hasPermission } from "@/lib/permissions";
 
 
 export default function ExpensesPage() {
@@ -110,6 +111,9 @@ export default function ExpensesPage() {
         onAddExpense={handleAddExpense}
         onEditExpense={handleEditRequest}
         onDeleteExpense={handleDeleteRequest}
+        canAdd={hasPermission(user, 'page:expenses')}
+        canEdit={hasPermission(user, 'page:expenses')}
+        canDelete={hasPermission(user, 'page:expenses')}
       />
       <ExpenseFormSheet
         isOpen={isSheetOpen}

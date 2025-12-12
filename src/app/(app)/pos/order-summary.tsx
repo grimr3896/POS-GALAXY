@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
+import { getSettings } from "@/lib/api";
+import { useMemo } from "react";
 
 
 interface OrderSummaryProps {
@@ -31,7 +33,6 @@ interface OrderSummaryProps {
   onClear: () => void;
 }
 
-const VAT_RATE = 0.16;
 
 export function OrderSummary({
   items,
@@ -45,7 +46,13 @@ export function OrderSummary({
 }: OrderSummaryProps) {
   
   const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
-  const totalTax = subtotal * (VAT_RATE / (1 + VAT_RATE));
+  
+  const { vatRate } = getSettings();
+  const totalTax = useMemo(() => {
+    const rate = vatRate / 100;
+    return subtotal * (rate / (1 + rate));
+  }, [subtotal, vatRate]);
+
 
   return (
     <>
@@ -132,7 +139,7 @@ export function OrderSummary({
               <span>Ksh {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
              <div className="flex justify-between text-sm text-muted-foreground">
-              <span>VAT (16% included)</span>
+              <span>VAT ({vatRate}% included)</span>
               <span>Ksh {totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <Separator />

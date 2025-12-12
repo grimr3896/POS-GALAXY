@@ -2,10 +2,32 @@
 
 "use client";
 
-import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant, DailyReport } from "./types";
+import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant, DailyReport, AppSettings } from "./types";
 import { getUUID } from "@/lib/utils";
 
-const VAT_RATE = 0.16; // 16% VAT
+// --- LocalStorage Wrapper ---
+const getFromStorage = <T,>(key: string, defaultValue: T): T => {
+  if (typeof window === "undefined") return defaultValue;
+  try {
+    const item = window.localStorage.getItem(key);
+    if (item) return JSON.parse(item);
+  } catch (error) {
+    console.error(`Error reading from localStorage key “${key}”:`, error);
+  }
+  // If item is not found or parsing fails, set the default value in storage
+  window.localStorage.setItem(key, JSON.stringify(defaultValue));
+  return defaultValue;
+};
+
+const saveToStorage = <T,>(key: string, value: T) => {
+  if (typeof window === "undefined") return;
+  try {
+    const item = JSON.stringify(value);
+    window.localStorage.setItem(key, item);
+  } catch (error) {
+    console.error(`Error writing to localStorage key “${key}”:`, error);
+  }
+};
 
 // --- Seed Data ---
 const seedUsers: User[] = [
@@ -56,47 +78,35 @@ const seedExpenses: Expense[] = [
     { id: 2, date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), description: 'Security light repair', amount: 1800, category: 'Maintenance', userId: 2 },
 ];
 
-
-// --- LocalStorage Wrapper ---
-const getFromStorage = <T,>(key: string, defaultValue: T): T => {
-  if (typeof window === "undefined") return defaultValue;
-  try {
-    const item = window.localStorage.getItem(key);
-    if (item) return JSON.parse(item);
-  } catch (error) {
-    console.error(`Error reading from localStorage key “${key}”:`, error);
-  }
-  // If item is not found or parsing fails, set the default value in storage
-  window.localStorage.setItem(key, JSON.stringify(defaultValue));
-  return defaultValue;
+const defaultSettings: AppSettings = {
+    appName: "Galaxy Inn",
+    currency: "KSH",
+    idleTimeout: 300,
+    vatRate: 16,
 };
 
-const saveToStorage = <T,>(key: string, value: T) => {
-  if (typeof window === "undefined") return;
-  try {
-    const item = JSON.stringify(value);
-    window.localStorage.setItem(key, item);
-  } catch (error) {
-    console.error(`Error writing to localStorage key “${key}”:`, error);
-  }
-};
 
 // Initialize if not present
 const initStorage = () => {
-    if (typeof window !== "undefined" && !window.localStorage.getItem("pos_initialized_v2")) {
-    saveToStorage("users", seedUsers);
-    saveToStorage("products", seedProducts);
-    saveToStorage("inventory", seedInventory);
-    saveToStorage("transactions", []);
-    saveToStorage("suspended_orders", []);
-    saveToStorage("expenses", seedExpenses);
-    saveToStorage("reports", []);
-    window.localStorage.setItem("pos_initialized_v2", "true");
-  }
+    if (typeof window !== "undefined" && !window.localStorage.getItem("pos_initialized_v3")) {
+        saveToStorage("users", seedUsers);
+        saveToStorage("products", seedProducts);
+        saveToStorage("inventory", seedInventory);
+        saveToStorage("transactions", []);
+        saveToStorage("suspended_orders", []);
+        saveToStorage("expenses", seedExpenses);
+        saveToStorage("reports", []);
+        saveToStorage("settings", defaultSettings);
+        window.localStorage.setItem("pos_initialized_v3", "true");
+    }
 };
 initStorage();
 
 // --- API Functions ---
+
+// Settings
+export const getSettings = (): AppSettings => getFromStorage("settings", defaultSettings);
+export const saveSettings = (settings: AppSettings) => saveToStorage("settings", settings);
 
 // Users
 export const getUsers = (): User[] => getFromStorage("users", []);
@@ -283,8 +293,10 @@ export interface PaymentDetails {
     change?: number;
 }
 
-const calculateTax = (price: number) => price * (VAT_RATE / (1 + VAT_RATE));
-
+const calculateTax = (price: number, vatRate: number) => {
+    const rate = vatRate / 100;
+    return price * (rate / (1 + rate));
+};
 
 export const saveTransaction = (
     userId: number, 
@@ -295,6 +307,7 @@ export const saveTransaction = (
     const transactions = getTransactions();
     const inventory = getInventory();
     const allProducts = getProducts();
+    const settings = getSettings();
     
     const total = items.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
     
@@ -305,7 +318,7 @@ export const saveTransaction = (
         const unitBuyPrice = calculateLineCost(item, product);
         const lineTotal = item.quantity * item.unitPrice;
         const lineCost = item.quantity * unitBuyPrice;
-        const lineTax = calculateTax(lineTotal);
+        const lineTax = calculateTax(lineTotal, settings.vatRate);
 
         return {
             id: parseInt(`${Date.now()}${index}`),
@@ -323,7 +336,7 @@ export const saveTransaction = (
     
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
     const totalTax = transactionItems.reduce((acc, item) => acc + item.lineTax, 0);
-    const profit = total - totalCost - totalTax;
+    const profit = total - totalCost; // Profit is total revenue minus cost, tax is part of revenue
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -527,7 +540,7 @@ export const getDashboardData = () => {
 
         t.items.forEach(item => {
             const productName = item.productName;
-            const itemProfit = item.lineTotal - item.lineCost - (item.lineTax || 0);
+            const itemProfit = item.lineTotal - item.lineCost;
             
             acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
             acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;
@@ -590,6 +603,7 @@ export const getCashUpSummary = (date: Date) => {
         return sum;
     }, 0);
 
+    // This is the physical cash expected to be in the till
     const expectedCash = summary.cashSales - changeGiven;
 
 

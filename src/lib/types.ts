@@ -116,6 +116,13 @@ export type Expense = {
   userId: number; // Who recorded it
 };
 
+export type AppSettings = {
+    appName: string;
+    currency: string;
+    idleTimeout: number;
+    vatRate: number;
+}
+
 export type Permission = 
   // POS
   | 'pos:create' | 'pos:read' | 'pos:update' | 'pos:delete' | 'pos:void' | 'pos:discount' | 'pos:refund'
@@ -150,7 +157,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'settings:read',
   ],
   Cashier: [
-    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:reports',
+    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:reports', 'page:expenses',
     'pos:create', 'pos:read',
     'inventory:read',
     'sales:read_own',
