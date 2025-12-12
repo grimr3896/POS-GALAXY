@@ -34,8 +34,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/permissions";
-import { rolePermissions, saveProductsFromCSV } from "@/lib/api";
+import { saveProductsFromCSV } from "@/lib/api";
 import type { Role, Permission } from "@/lib/types";
+import { rolePermissions } from "@/lib/types";
 import { Check, X, Download, Upload, FileUp } from "lucide-react";
 
 const settingsSchema = z.object({
