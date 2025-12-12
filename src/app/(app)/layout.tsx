@@ -108,15 +108,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               const isLocked = settings.lockedTabs?.includes(item.href) && !unlockedTabs.includes(item.href);
               return (
                 <SidebarMenuItem key={item.href}>
-                  <Link href={item.href} onClick={(e) => handleNavClick(e, item.href)} legacyBehavior>
+                  <Link href={item.href} onClick={(e) => handleNavClick(e, item.href)} passHref>
                     <SidebarMenuButton
-                      as="a" // Render as an anchor tag to work with Link's legacyBehavior
-                      href={item.href} // Pass href for the anchor
+                      asChild
                       isActive={pathname.startsWith(item.href)}
                       tooltip={{ children: item.label, side: "right", className: "bg-popover text-popover-foreground" }}
                     >
-                      {isLocked ? <Lock className="text-destructive" /> : <item.icon />}
-                      <span>{item.label}</span>
+                      <span>
+                        {isLocked ? <Lock className="text-destructive" /> : <item.icon />}
+                        <span>{item.label}</span>
+                      </span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
