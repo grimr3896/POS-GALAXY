@@ -90,7 +90,7 @@ export default function SettingsPage() {
     formState: { errors },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: () => getSettings(),
+    defaultValues: getSettings(),
   });
   
   React.useEffect(() => {
