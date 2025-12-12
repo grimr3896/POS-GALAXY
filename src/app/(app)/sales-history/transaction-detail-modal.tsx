@@ -117,12 +117,12 @@ export function TransactionDetailModal({
                 </div>
             </div>
             
-            {!canReverse && transaction.status !== 'Reversed' && (
-                 <Alert>
+            {!canReverse && (
+                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Action Not Available</AlertTitle>
                     <AlertDescription>
-                        This transaction cannot be reversed as it is not completed.
+                        This transaction cannot be reversed as its status is "{transaction.status}".
                     </AlertDescription>
                 </Alert>
             )}

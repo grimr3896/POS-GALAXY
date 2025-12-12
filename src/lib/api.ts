@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant } from "./types";
+import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant, DailyReport } from "./types";
 import { getUUID } from "@/lib/utils";
 
 // --- Seed Data ---
@@ -15,24 +15,23 @@ const seedUsers: User[] = [
 const seedProducts: Product[] = [
     { 
         id: 1, sku: 'SKU001', name: 'Guinness', image: 'https://picsum.photos/seed/guinness/400/400', 
-        type: 'bottle', unit: 'bottle', buyPrice: 180, sellPrice: 300, thresholdQuantity: 12 
+        type: 'bottle', buyPrice: 180, sellPrice: 300, thresholdQuantity: 12 
     },
     { 
         id: 2, sku: 'SKU002', name: 'Tusker Lager', image: 'https://picsum.photos/seed/tusker/400/400', 
-        type: 'bottle', unit: 'bottle', buyPrice: 160, sellPrice: 280, thresholdQuantity: 12 
+        type: 'bottle', buyPrice: 160, sellPrice: 280, thresholdQuantity: 12 
     },
     { 
         id: 3, sku: 'SKU003', name: 'Coca-Cola', image: 'https://picsum.photos/seed/coke/400/400', 
-        type: 'bottle', unit: 'bottle', buyPrice: 40, sellPrice: 80, thresholdQuantity: 24 
+        type: 'bottle', buyPrice: 40, sellPrice: 80, thresholdQuantity: 24 
     },
     { 
         id: 4, sku: 'SKU004', name: 'Keringet Water', image: 'https://picsum.photos/seed/water/400/400', 
-        type: 'bottle', unit: 'bottle', buyPrice: 30, sellPrice: 70, thresholdQuantity: 24
+        type: 'bottle', buyPrice: 30, sellPrice: 70, thresholdQuantity: 24
     },
     { 
         id: 5, sku: 'DRUM001', name: 'Famous Grouse', image: 'https://picsum.photos/seed/whiskey/400/400', 
-        type: 'drum', unit: 'ml', buyPrice: 1.5, // Price per ml
-        sellPrice: 0, // Not sold by drum
+        type: 'drum', buyPrice: 1.5, // Price per ml
         thresholdQuantity: 5000, // 5L
         pourVariants: [
             { id: 1, name: 'Tot', pourSizeML: 30, sellPrice: 150 },
@@ -89,6 +88,7 @@ const initStorage = () => {
     saveToStorage("transactions", []);
     saveToStorage("suspended_orders", []);
     saveToStorage("expenses", seedExpenses);
+    saveToStorage("reports", []);
     window.localStorage.setItem("pos_initialized_v2", "true");
   }
 };
@@ -153,8 +153,8 @@ export const saveProduct = (productData: Omit<Product, 'id' | 'unit'> & { invent
       products[productIndex] = { 
           ...products[productIndex], 
           ...updatedProductData,
-          unit: productData.type === 'bottle' ? 'bottle' : 'ml',
-          image: productData.image || products[productIndex].image || defaultImage 
+          image: productData.image || products[productIndex].image || defaultImage,
+          pourVariants: updatedProductData.type === 'drum' ? (updatedProductData.pourVariants || []).map((v, i) => ({...v, id: v.id || Date.now() + i })) : undefined,
       };
       
       if (inventoryData) {
@@ -175,9 +175,8 @@ export const saveProduct = (productData: Omit<Product, 'id' | 'unit'> & { invent
     const newProduct: Product = {
       ...newProductData,
       id: newId,
-      unit: productData.type === 'bottle' ? 'bottle' : 'ml',
       image: productData.image || defaultImage,
-      pourVariants: productData.type === 'drum' ? (productData.pourVariants || []).map((v, i) => ({...v, id: i, name: v.name || `${v.pourSizeML}ml` })) : undefined,
+      pourVariants: productData.type === 'drum' ? (productData.pourVariants || []).map((v, i) => ({...v, id: Date.now() + i, name: v.name || `${v.pourSizeML}ml` })) : undefined,
     };
     products.push(newProduct);
     
@@ -222,8 +221,6 @@ export const saveProductsFromCSV = async (csvContent: string): Promise<{created:
         }
     }
 
-    const products = getProducts();
-    const inventory = getInventory();
     let createdCount = 0;
     let updatedCount = 0;
 
@@ -244,7 +241,7 @@ export const saveProductsFromCSV = async (csvContent: string): Promise<{created:
             image: row.image || undefined
         };
 
-        const existingProduct = products.find(p => p.sku === productData.sku);
+        const existingProduct = getProducts().find(p => p.sku === productData.sku);
         
         const inventoryData: Partial<InventoryItem> = {
             quantityUnits: parseInt(row.quantity) || 0,
@@ -252,7 +249,7 @@ export const saveProductsFromCSV = async (csvContent: string): Promise<{created:
         };
 
         if (existingProduct) { // Update
-            saveProduct({ ...existingProduct, ...productData, inventory: { ...existingProduct.inventory, ...inventoryData } });
+            saveProduct({ ...existingProduct, ...productData, inventory: { ...(existingProduct as any).inventory, ...inventoryData } });
             updatedCount++;
         } else { // Create
             saveProduct({ ...productData, inventory: inventoryData as InventoryItem });
@@ -380,8 +377,8 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
     }
     
     const transaction = transactions[transactionIndex];
-    if (transaction.status === "Reversed") {
-        throw new Error("Transaction has already been reversed.");
+    if (transaction.status === "Reversed" || transaction.status === "Archived") {
+        throw new Error(`Transaction has status "${transaction.status}" and cannot be reversed.`);
     }
 
     // 1. Restore stock ONLY if it was not a backdated transaction
@@ -438,7 +435,6 @@ export const reverseTransaction = (transactionId: string): OrderItem[] => {
                 image: product.image,
                 quantity: item.quantity,
                 unitPrice: variant?.sellPrice || 0,
-                // The API's `createOrderItem` will recalculate this based on per-ml cost, so we just need to pass the base product cost
                 buyPrice: product.buyPrice, 
                 totalPrice: item.lineTotal,
                 type: 'pour',
@@ -577,10 +573,63 @@ export const getCashUpSummary = (date: Date) => {
         transactionCount: todaysTransactions.length,
     };
     
-    const expectedCash = summary.cashSales - todaysTransactions.reduce((sum, t) => sum + (t.paymentMethod === 'Cash' || t.paymentMethod === 'Split' ? t.change : 0), 0);
+    const changeGiven = todaysTransactions.reduce((sum, t) => {
+        // Only subtract change if it was a cash or split transaction that could produce physical change
+        if (t.paymentMethod === 'Cash' || t.paymentMethod === 'Split') {
+             return sum + (t.change || 0);
+        }
+        return sum;
+    }, 0);
+
+    const expectedCash = summary.cashSales - changeGiven;
+
 
     return {
         ...summary,
         expectedCash,
     };
+};
+
+export const endDayProcess = (): DailyReport => {
+    const allTransactions = getTransactions();
+    const today = new Date().toISOString().split('T')[0];
+
+    const todaysTransactions = allTransactions.filter(t => t.timestamp.startsWith(today) && t.status === 'Completed');
+    
+    if (todaysTransactions.length === 0) {
+        throw new Error("No completed transactions to process for today.");
+    }
+    
+    // Step 1 & 2: Freeze and Lock
+    const updatedTransactions = allTransactions.map(t => {
+        if (t.timestamp.startsWith(today) && t.status === 'Completed') {
+            return { ...t, status: 'Archived' as const };
+        }
+        return t;
+    });
+
+    // Step 3: Generate report
+    const report: DailyReport = {
+        id: `REP-${today}`,
+        date: today,
+        totalSales: todaysTransactions.reduce((acc, t) => acc + t.total, 0),
+        totalProfit: todaysTransactions.reduce((acc, t) => acc + (t.profit || 0), 0),
+        totalCost: todaysTransactions.reduce((acc, t) => acc + t.totalCost, 0),
+        totalTransactions: todaysTransactions.length,
+        paymentSummary: {
+            cash: todaysTransactions.reduce((acc, t) => acc + (t.cashAmount || 0), 0),
+            mpesa: todaysTransactions.reduce((acc, t) => acc + (t.mpesaAmount || 0), 0),
+            split: todaysTransactions.filter(t => t.paymentMethod === 'Split').length,
+        },
+        transactions: todaysTransactions,
+    };
+
+    // Step 4: Save the new report and the updated transaction list
+    const allReports = getFromStorage<DailyReport[]>("reports", []);
+    allReports.unshift(report);
+    saveToStorage("reports", allReports);
+    saveToStorage("transactions", updatedTransactions);
+    
+    // Step 5 & 6 are handled by the caller (webhook + state reset)
+    return report;
 };

@@ -1,6 +1,5 @@
 
 
-
 export type User = {
   id: number;
   name: string;
@@ -23,9 +22,8 @@ export type Product = {
   name: string;
   image: string;
   type: "bottle" | "drum";
-  unit: "ml" | "L" | "bottle";
   buyPrice: number; // For drums, this is cost per ml
-  sellPrice: number; // For bottles
+  sellPrice?: number; // For bottles
   thresholdQuantity: number; // In units for bottles, in ml for drums
   pourVariants?: ProductPourVariant[];
 };
@@ -68,9 +66,24 @@ export type Transaction = {
   profit: number;
   discount: number;
   paymentMethod: "Cash" | "Mpesa" | "Split";
-  status: "Completed" | "Suspended" | "Cancelled" | "Reversed";
+  status: "Completed" | "Suspended" | "Cancelled" | "Reversed" | "Archived";
   isBackdated?: boolean;
 };
+
+export type DailyReport = {
+    id: string;
+    date: string;
+    totalSales: number;
+    totalProfit: number;
+    totalCost: number;
+    totalTransactions: number;
+    paymentSummary: {
+        cash: number;
+        mpesa: number;
+        split: number;
+    };
+    transactions: Transaction[];
+}
 
 export type SuspendedOrder = {
   id: string;

@@ -121,7 +121,7 @@ export function SalesHistoryTable({ transactions, users, isLoading, onViewTransa
                      <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost" disabled={t.status === 'Reversed'}>
+                          <Button aria-haspopup="true" size="icon" variant="ghost" disabled={t.status === 'Reversed' || t.status === 'Archived'}>
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">Toggle menu</span>
                           </Button>
