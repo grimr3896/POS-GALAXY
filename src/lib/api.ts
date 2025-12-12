@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { User, Product, InventoryItem, Transaction, OrderItem, TransactionItem, SuspendedOrder, Expense, ProductPourVariant, DailyReport, AppSettings } from "./types";
