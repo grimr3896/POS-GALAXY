@@ -101,7 +101,7 @@ export const getProductsWithInventory = () => {
     });
 }
 
-export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: InventoryItem, id?: number }): Product => {
+export const saveProduct = (productData: Omit<Product, 'id' | 'unit'> & { inventory?: InventoryItem, id?: number }): Product => {
   const products = getProducts();
   const inventory = getInventory();
   const defaultImage = `https://picsum.photos/seed/${Math.random()}/400/400`;
@@ -109,10 +109,12 @@ export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: Inv
   if (productData.id) { // Update existing product
     const productIndex = products.findIndex(p => p.id === productData.id);
     if (productIndex !== -1) {
-      const { inventory: inventoryData, ...updatedProduct } = productData;
+      const { inventory: inventoryData, ...updatedProductData } = productData;
+      
       products[productIndex] = { 
           ...products[productIndex], 
-          ...updatedProduct, 
+          ...updatedProductData,
+          unit: productData.type === 'bottle' ? 'bottle' : 'ml',
           image: productData.image || products[productIndex].image || defaultImage 
       };
       
@@ -122,10 +124,11 @@ export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: Inv
           inventory[invIndex] = { ...inventory[invIndex], ...inventoryData };
         }
       }
+      saveToStorage("products", products);
+      saveToStorage("inventory", inventory);
+      return products[productIndex];
     }
-    saveToStorage("products", products);
-    saveToStorage("inventory", inventory);
-    return products[productIndex];
+     throw new Error("Product not found for updating.");
   } else { // Create new product
     const newId = (products.reduce((maxId, p) => Math.max(p.id, maxId), 0)) + 1;
     const { inventory: inventoryData, ...newProductData } = productData;
@@ -133,6 +136,7 @@ export const saveProduct = (productData: Omit<Product, 'id'> & { inventory?: Inv
     const newProduct: Product = {
       ...newProductData,
       id: newId,
+      unit: productData.type === 'bottle' ? 'bottle' : 'ml',
       image: productData.image || defaultImage,
       pourVariants: productData.type === 'drum' ? (productData.pourVariants || []).map((v, i) => ({...v, id: i, name: v.name || `${v.pourSizeML}ml` })) : undefined,
     };
@@ -165,6 +169,62 @@ export const deleteProduct = (productId: number) => {
   saveToStorage("inventory", inventory);
 };
 
+export const saveProductsFromCSV = async (csvContent: string): Promise<{created: number, updated: number}> => {
+    const lines = csvContent.split('\n').filter(line => line.trim() !== '');
+    if (lines.length < 2) {
+        throw new Error("CSV file must have a header and at least one data row.");
+    }
+    const header = lines[0].split(',').map(h => h.trim());
+    const requiredHeaders = ['sku', 'name', 'type', 'buyPrice', 'sellPrice', 'thresholdQuantity'];
+    
+    for(const req of requiredHeaders) {
+        if (!header.includes(req)) {
+            throw new Error(`CSV is missing required header: ${req}`);
+        }
+    }
+
+    const products = getProducts();
+    const inventory = getInventory();
+    let createdCount = 0;
+    let updatedCount = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        const row = header.reduce((obj, nextHeader, index) => {
+            obj[nextHeader] = values[index]?.trim() || '';
+            return obj;
+        }, {} as Record<string, string>);
+        
+        const productData = {
+            sku: row.sku,
+            name: row.name,
+            type: row.type as 'bottle' | 'drum',
+            buyPrice: parseFloat(row.buyPrice),
+            sellPrice: parseFloat(row.sellPrice),
+            thresholdQuantity: parseInt(row.thresholdQuantity),
+            image: row.image || undefined
+        };
+
+        const existingProduct = products.find(p => p.sku === productData.sku);
+        
+        const inventoryData: Partial<InventoryItem> = {
+            quantityUnits: parseInt(row.quantity) || 0,
+            currentML: row.type === 'drum' ? (parseInt(row.quantity) || 0) : undefined,
+        };
+
+        if (existingProduct) { // Update
+            saveProduct({ ...existingProduct, ...productData, inventory: { ...existingProduct.inventory, ...inventoryData } });
+            updatedCount++;
+        } else { // Create
+            saveProduct({ ...productData, inventory: inventoryData as InventoryItem });
+            createdCount++;
+        }
+    }
+    
+    return { created: createdCount, updated: updatedCount };
+};
+
+
 
 // Transactions
 export const getTransactions = (): Transaction[] => getFromStorage("transactions", []);
@@ -180,9 +240,9 @@ const calculateLineCost = (item: OrderItem | TransactionItem, product: Product):
 export interface PaymentDetails {
     amountReceived: number;
     paymentMethod: 'Cash' | 'Mpesa' | 'Split';
-    cashAmount: number;
-    mpesaAmount: number;
-    change: number;
+    cashAmount?: number;
+    mpesaAmount?: number;
+    change?: number;
 }
 
 export const saveTransaction = (
@@ -230,9 +290,9 @@ export const saveTransaction = (
         items: transactionItems,
         total: total,
         amountReceived: paymentDetails.amountReceived,
-        cashAmount: paymentDetails.cashAmount,
-        mpesaAmount: paymentDetails.mpesaAmount,
-        change: paymentDetails.change,
+        cashAmount: paymentDetails.cashAmount || 0,
+        mpesaAmount: paymentDetails.mpesaAmount || 0,
+        change: paymentDetails.change || 0,
         totalCost,
         profit,
         discount: 0,
@@ -468,6 +528,8 @@ export const getCashUpSummary = (date: Date) => {
     const selectedDate = date.toISOString().split('T')[0];
     
     const todaysTransactions = transactions.filter(t => t.timestamp.startsWith(selectedDate) && t.status === 'Completed');
+
+    if (todaysTransactions.length === 0) return null;
 
     const summary = {
         totalSales: todaysTransactions.reduce((sum, t) => sum + t.total, 0),

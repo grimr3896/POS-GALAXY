@@ -34,9 +34,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/permissions";
-import { rolePermissions } from "@/lib/types";
+import { rolePermissions, saveProductsFromCSV } from "@/lib/api";
 import type { Role, Permission } from "@/lib/types";
-import { Check, X, Download, Upload } from "lucide-react";
+import { Check, X, Download, Upload, FileUp } from "lucide-react";
 
 const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
@@ -77,6 +77,8 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const canUpdateSettings = hasPermission(user, 'settings:update');
   const restoreInputRef = React.useRef<HTMLInputElement>(null);
+  const csvInputRef = React.useRef<HTMLInputElement>(null);
+
 
   const {
     register,
@@ -167,6 +169,31 @@ export default function SettingsPage() {
     };
     reader.readAsText(file);
   };
+  
+  const handleProductImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const content = e.target?.result;
+            if (typeof content !== 'string') throw new Error("Invalid file content.");
+            
+            const { created, updated } = await saveProductsFromCSV(content);
+
+            toast({
+                title: "Import Complete",
+                description: `${created} products created, ${updated} products updated. Please refresh the inventory page.`,
+                duration: 10000,
+            });
+            if(csvInputRef.current) csvInputRef.current.value = "";
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Import Failed", description: error.message || "Could not import products from CSV." });
+        }
+    };
+    reader.readAsText(file);
+  };
 
 
   return (
@@ -214,6 +241,37 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </form>
+      
+      {canUpdateSettings && (
+        <Card>
+            <CardHeader>
+                <CardTitle>Data Import</CardTitle>
+                <CardDescription>
+                    Load product data from an external CSV file. This will update existing products with the same SKU or create new ones.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Label htmlFor="csv-import">Product CSV File</Label>
+                     <Input
+                        ref={csvInputRef}
+                        id="csv-import"
+                        type="file"
+                        className="hidden"
+                        accept=".csv"
+                        onChange={handleProductImport}
+                    />
+                    <Button variant="outline" onClick={() => csvInputRef.current?.click()} className="w-full sm:w-auto">
+                        <FileUp className="mr-2 h-4 w-4" />
+                        Import Products from CSV
+                    </Button>
+                    <p className="text-xs text-muted-foreground pt-2">
+                        Required columns: `sku,name,type,buyPrice,sellPrice,thresholdQuantity,quantity,image`
+                    </p>
+                </div>
+            </CardContent>
+        </Card>
+      )}
 
       {canUpdateSettings && (
          <Card>
@@ -304,7 +362,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
-
-    
