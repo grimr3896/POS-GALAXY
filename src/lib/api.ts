@@ -123,9 +123,8 @@ export const changeMasterPassword = (currentPassword: string, newPassword: strin
             return;
         }
 
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
-        if (!passwordRegex.test(newPassword) || newPassword === 'DARKSULPHUR') {
-            reject(new Error("New password does not meet the security requirements."));
+        if (newPassword.length < 6) {
+            reject(new Error("New password must be at least 6 characters long."));
             return;
         }
 
