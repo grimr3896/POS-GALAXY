@@ -1,7 +1,7 @@
 
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   SidebarProvider,
   Sidebar,
@@ -15,9 +15,13 @@ import {
 } from "@/components/ui/sidebar";
 import { Icons } from "@/components/icons";
 import { UserNav } from "@/components/user-nav";
-import { LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet, Lock, Unlock } from "lucide-react";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getSettings } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { PasswordPromptDialog } from "@/app/(app)/inventory/password-prompt-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,13 +37,60 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
+
+  const [settings, setSettings] = useState(getSettings());
+  const [unlockedTabs, setUnlockedTabs] = useState<string[]>([]);
+  const [passwordPrompt, setPasswordPrompt] = useState<{ isOpen: boolean, targetHref: string | null }>({ isOpen: false, targetHref: null });
+
+  useEffect(() => {
+    // On mount, read session storage for any tabs unlocked in this session
+    const sessionUnlocked = sessionStorage.getItem("unlockedTabs");
+    if (sessionUnlocked) {
+      setUnlockedTabs(JSON.parse(sessionUnlocked));
+    }
+  }, []);
 
   const getPageTitle = () => {
     const currentNavItem = navItems.find((item) => pathname.startsWith(item.href));
     return currentNavItem ? currentNavItem.label : "Galaxy Inn";
   };
   
+  const handleNavClick = (e: React.MouseEvent, href: string) => {
+      const isLocked = settings.lockedTabs?.includes(href);
+      const isSessionUnlocked = unlockedTabs.includes(href);
+
+      if (isLocked && !isSessionUnlocked) {
+          e.preventDefault();
+          setPasswordPrompt({ isOpen: true, targetHref: href });
+      }
+      // If not locked or already unlocked for the session, the Link will navigate as usual.
+  };
+
+  const handlePasswordConfirm = (password: string) => {
+    const masterPassword = settings.masterPassword || "626-jarvis";
+    const targetHref = passwordPrompt.targetHref;
+
+    if (password === masterPassword && targetHref) {
+      const newUnlockedTabs = [...unlockedTabs, targetHref];
+      setUnlockedTabs(newUnlockedTabs);
+      sessionStorage.setItem("unlockedTabs", JSON.stringify(newUnlockedTabs));
+      
+      toast({ title: "Tab Unlocked", description: `You can now access this tab for the rest of your session.` });
+      router.push(targetHref);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Incorrect Password",
+        description: "Access to this tab is denied.",
+      });
+    }
+    setPasswordPrompt({ isOpen: false, targetHref: null });
+  };
+
+
   return (
     <SidebarProvider>
       <Sidebar collapsible={isMobile ? "offcanvas" : "icon"} className="border-r border-sidebar-border">
@@ -53,19 +104,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <Link href={item.href}>
-                  <SidebarMenuButton
-                    isActive={pathname.startsWith(item.href)}
-                    tooltip={{ children: item.label, side: "right", className: "bg-popover text-popover-foreground" }}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
+            {navItems.map((item) => {
+              const isLocked = settings.lockedTabs?.includes(item.href) && !unlockedTabs.includes(item.href);
+              return (
+                <SidebarMenuItem key={item.href}>
+                  <Link href={item.href} onClick={(e) => handleNavClick(e, item.href)} legacyBehavior>
+                    <SidebarMenuButton
+                      as="a" // Render as an anchor tag to work with Link's legacyBehavior
+                      href={item.href} // Pass href for the anchor
+                      isActive={pathname.startsWith(item.href)}
+                      tooltip={{ children: item.label, side: "right", className: "bg-popover text-popover-foreground" }}
+                    >
+                      {isLocked ? <Lock className="text-destructive" /> : <item.icon />}
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              )
+            })}
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -81,6 +137,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </SidebarInset>
+      <PasswordPromptDialog
+        isOpen={passwordPrompt.isOpen}
+        onOpenChange={(isOpen) => setPasswordPrompt({ isOpen, targetHref: null })}
+        onConfirm={handlePasswordConfirm}
+        title="Enter Admin Password"
+        description="This tab is locked. Please enter the master password to unlock it for this session."
+      />
     </SidebarProvider>
   );
 }

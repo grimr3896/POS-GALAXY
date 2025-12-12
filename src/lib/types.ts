@@ -122,6 +122,7 @@ export type AppSettings = {
     idleTimeout: number;
     vatRate: number;
     masterPassword?: string;
+    lockedTabs?: string[];
 }
 
 export type Permission = 
@@ -136,13 +137,13 @@ export type Permission =
   // Settings
   | 'settings:read' | 'settings:update'
   // General Page Access
-  | 'page:dashboard' | 'page:pos' | 'page:inventory' | 'page:sales-history' | 'page:expenses' | 'page:reports' | 'page:employees' | 'page:settings';
+  | 'page:dashboard' | 'page:pos' | 'page:inventory' | 'page:sales-history' | 'page:expenses' | 'page:reports' | 'page:employees' | 'page:settings' | 'page:cash-up';
 
 export type Role = "Admin" | "Manager" | "Cashier" | "Waiter" | "Inventory Clerk" | "Security";
 
 export const rolePermissions: Record<Role, Permission[]> = {
   Admin: [
-    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:expenses', 'page:reports', 'page:employees', 'page:settings',
+    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:expenses', 'page:reports', 'page:employees', 'page:settings', 'page:cash-up',
     'pos:create', 'pos:read', 'pos:update', 'pos:delete', 'pos:void', 'pos:discount', 'pos:refund',
     'inventory:create', 'inventory:read', 'inventory:update', 'inventory:delete', 'inventory:adjust',
     'sales:read_all', 'sales:export', 'sales:analytics', 'sales:read_own',
@@ -150,7 +151,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'settings:read', 'settings:update',
   ],
   Manager: [
-    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:expenses', 'page:reports', 'page:employees',
+    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:expenses', 'page:reports', 'page:employees', 'page:cash-up',
     'pos:create', 'pos:read', 'pos:update', 'pos:discount', 'pos:refund',
     'inventory:create', 'inventory:read', 'inventory:update', 'inventory:adjust',
     'sales:read_all', 'sales:export', 'sales:analytics', 'sales:read_own',
@@ -158,7 +159,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'settings:read',
   ],
   Cashier: [
-    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:reports', 'page:expenses',
+    'page:dashboard', 'page:pos', 'page:inventory', 'page:sales-history', 'page:reports', 'page:expenses', 'page:cash-up',
     'pos:create', 'pos:read',
     'inventory:read',
     'sales:read_own',

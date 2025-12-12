@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -28,14 +28,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { saveProductsFromCSV, getSettings, saveSettings } from "@/lib/api";
-import type { Role, Permission } from "@/lib/types";
-import { rolePermissions } from "@/lib/types";
-import { Check, X, Download, Upload, FileUp } from "lucide-react";
+import type { AppSettings } from "@/lib/types";
+import { Download, Upload, FileUp, LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet } from "lucide-react";
 
 const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
@@ -43,32 +43,21 @@ const settingsSchema = z.object({
   idleTimeout: z.coerce.number().min(0),
   vatRate: z.coerce.number().min(0).max(100, "VAT rate cannot exceed 100%."),
   masterPassword: z.string().optional(),
+  lockedTabs: z.array(z.string()).optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-const allPermissions: { group: string, permissions: { id: Permission, label: string}[] }[] = [
-    { group: 'POS', permissions: [
-        { id: 'page:pos', label: 'Access' }, { id: 'pos:create', label: 'Create' }, { id: 'pos:update', label: 'Update' }, { id: 'pos:delete', label: 'Delete' }, { id: 'pos:discount', label: 'Discount' }
-    ]},
-    { group: 'Inventory', permissions: [
-        { id: 'page:inventory', label: 'Access' }, { id: 'inventory:create', label: 'Create' }, { id: 'inventory:update', label: 'Update' }, { id: 'inventory:delete', label: 'Delete' }
-    ]},
-    { group: 'Sales', permissions: [
-        { id: 'page:sales-history', label: 'Access' }, { id: 'sales:read_all', label: 'Read All' }, { id: 'sales:read_own', label: 'Read Own' }, { id: 'sales:export', label: 'Export' }
-    ]},
-    { group: 'Employees', permissions: [
-        { id: 'page:employees', label: 'Access' }, { id: 'employees:create', label: 'Create' }, { id: 'employees:update', label: 'Update' }, { id: 'employees:delete', label: 'Delete' }
-    ]},
-    { group: 'Settings', permissions: [
-        { id: 'page:settings', label: 'Access' }, { id: 'settings:read', label: 'Read' }, { id: 'settings:update', label: 'Update' }
-    ]},
-    { group: 'Reports', permissions: [
-      { id: 'page:reports', label: 'Access' }
-    ]},
-    { group: 'Expenses', permissions: [
-      { id: 'page:expenses', label: 'Access' }
-    ]},
+const allTabs = [
+  { id: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "/pos", label: "Point of Sale", icon: ShoppingCart },
+  { id: "/inventory", label: "Inventory", icon: Archive },
+  { id: "/sales-history", label: "Sales History", icon: History },
+  { id: "/expenses", label: "Expenses", icon: Landmark },
+  { id: "/cash-up", label: "Cash Up", icon: Wallet },
+  { id: "/reports", label: "Reports", icon: FileText },
+  { id: "/employees", label: "Employees", icon: Users },
+  { id: "/settings", label: "Settings", icon: Settings },
 ];
 
 const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses", "settings"];
@@ -77,6 +66,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const restoreInputRef = React.useRef<HTMLInputElement>(null);
   const csvInputRef = React.useRef<HTMLInputElement>(null);
+  const [initialSettings, setInitialSettings] = useState<SettingsFormValues>(getSettings());
 
 
   const {
@@ -84,25 +74,37 @@ export default function SettingsPage() {
     handleSubmit,
     control,
     reset,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: getSettings(),
+    defaultValues: initialSettings,
   });
   
-  React.useEffect(() => {
-    reset(getSettings());
-  }, [reset]);
+  useEffect(() => {
+    reset(initialSettings);
+  }, [initialSettings, reset]);
 
   const onSubmit = (data: SettingsFormValues) => {
     saveSettings(data);
+    setInitialSettings(data); // update state to reflect saved changes
     toast({
       title: "Settings Saved",
-      description: "Your new settings have been applied.",
+      description: "Your new settings have been applied. Some changes may require a page reload.",
     });
   };
   
-  const roles = Object.keys(rolePermissions) as Role[];
+  const handleTabLockChange = (tabId: string, isLocked: boolean) => {
+    const currentLockedTabs = getValues("lockedTabs") || [];
+    let newLockedTabs;
+    if (isLocked) {
+      newLockedTabs = [...currentLockedTabs, tabId];
+    } else {
+      newLockedTabs = currentLockedTabs.filter(id => id !== tabId);
+    }
+    setValue("lockedTabs", newLockedTabs, { shouldDirty: true });
+  };
 
   const handleBackup = () => {
     try {
@@ -157,6 +159,7 @@ export default function SettingsPage() {
                  });
                  // Reset file input
                  if(restoreInputRef.current) restoreInputRef.current.value = "";
+                 window.location.reload();
             } else {
                 throw new Error("Backup file does not contain valid data.");
             }
@@ -244,14 +247,14 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle>Security</CardTitle>
             <CardDescription>
-              Manage passwords and access control.
+              Manage master password and tab access controls.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="masterPassword">Master Password</Label>
                 <Input id="masterPassword" type="password" {...register("masterPassword")} placeholder="Enter new password to change" />
-                <p className="text-xs text-muted-foreground">Used for critical actions like editing or deleting inventory. Leave blank to keep the current password.</p>
+                <p className="text-xs text-muted-foreground">Used for critical actions like editing inventory or unlocking tabs. Leave blank to keep the current password.</p>
               </div>
               <div className="space-y-2">
                   <Label htmlFor="idleTimeout">Idle Timeout (seconds)</Label>
@@ -263,37 +266,44 @@ export default function SettingsPage() {
               <Separator />
 
               <div>
-                  <h3 className="text-lg font-medium">Role Permissions</h3>
-                  <p className="text-sm text-muted-foreground">Define which tabs and actions each role can access.</p>
+                  <h3 className="text-lg font-medium">Tab Access Control</h3>
+                  <p className="text-sm text-muted-foreground">Toggle to lock or unlock specific tabs. Unlocking requires the master password.</p>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-md border">
                   <Table>
                       <TableHeader>
                           <TableRow>
-                              <TableHead className="w-[150px]">Permission</TableHead>
-                              {roles.map(role => <TableHead key={role} className="text-center">{role}</TableHead>)}
+                              <TableHead>Tab</TableHead>
+                              <TableHead className="text-right">Lock Status</TableHead>
                           </TableRow>
                       </TableHeader>
                       <TableBody>
-                          {allPermissions.map(group => (
-                              <React.Fragment key={group.group}>
-                                  <TableRow className="bg-muted/50">
-                                      <TableCell colSpan={roles.length + 1} className="font-semibold">{group.group}</TableCell>
-                                  </TableRow>
-                                  {group.permissions.map(permission => (
-                                      <TableRow key={permission.id}>
-                                          <TableCell className="pl-6 text-muted-foreground">{permission.label}</TableCell>
-                                          {roles.map(role => (
-                                              <TableCell key={`${role}-${permission.id}`} className="text-center">
-                                                  {rolePermissions[role].includes(permission.id) 
-                                                      ? <Check className="h-5 w-5 text-green-500 mx-auto" /> 
-                                                      : <X className="h-5 w-5 text-destructive mx-auto" />}
-                                              </TableCell>
-                                          ))}
-                                      </TableRow>
-                                  ))}
-                              </React.Fragment>
-                          ))}
+                        {allTabs.map(tab => (
+                          <TableRow key={tab.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2 font-medium">
+                                  <tab.icon className="h-4 w-4" />
+                                  {tab.label}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {tab.id === '/settings' ? (
+                                    <span className="text-xs text-muted-foreground italic">Always Unlocked</span>
+                                ) : (
+                                    <Controller
+                                      name="lockedTabs"
+                                      control={control}
+                                      render={({ field }) => (
+                                        <Switch
+                                          checked={field.value?.includes(tab.id)}
+                                          onCheckedChange={(checked) => handleTabLockChange(tab.id, checked)}
+                                        />
+                                      )}
+                                    />
+                                )}
+                              </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                   </Table>
               </div>

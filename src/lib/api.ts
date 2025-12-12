@@ -81,15 +81,16 @@ const seedExpenses: Expense[] = [
 const defaultSettings: AppSettings = {
     appName: "Galaxy Inn",
     currency: "KSH",
-    idleTimeout: 300,
+    idleTimeout: 0, // Disabled by default
     vatRate: 16,
     masterPassword: "626-jarvis",
+    lockedTabs: [],
 };
 
 
 // Initialize if not present
 const initStorage = () => {
-    if (typeof window !== "undefined" && !window.localStorage.getItem("pos_initialized_v3")) {
+    if (typeof window !== "undefined" && !window.localStorage.getItem("pos_initialized_v4")) {
         saveToStorage("users", seedUsers);
         saveToStorage("products", seedProducts);
         saveToStorage("inventory", seedInventory);
@@ -98,7 +99,7 @@ const initStorage = () => {
         saveToStorage("expenses", seedExpenses);
         saveToStorage("reports", []);
         saveToStorage("settings", defaultSettings);
-        window.localStorage.setItem("pos_initialized_v3", "true");
+        window.localStorage.setItem("pos_initialized_v4", "true");
     }
 };
 initStorage();
@@ -107,7 +108,15 @@ initStorage();
 
 // Settings
 export const getSettings = (): AppSettings => getFromStorage("settings", defaultSettings);
-export const saveSettings = (settings: AppSettings) => saveToStorage("settings", settings);
+export const saveSettings = (settings: AppSettings) => {
+    const currentSettings = getSettings();
+    // Prevent masterPassword from being saved as an empty string
+    const newSettings = {
+        ...settings,
+        masterPassword: settings.masterPassword ? settings.masterPassword : currentSettings.masterPassword,
+    };
+    saveToStorage("settings", newSettings);
+};
 
 // Users
 export const getUsers = (): User[] => getFromStorage("users", []);
@@ -337,7 +346,7 @@ export const saveTransaction = (
     
     const totalCost = transactionItems.reduce((acc, item) => acc + item.lineCost, 0);
     const totalTax = transactionItems.reduce((acc, item) => acc + item.lineTax, 0);
-    const profit = total - totalCost - totalTax;
+    const profit = total - totalCost;
 
     const transactionTimestamp = options.transactionDate ? options.transactionDate.toISOString() : new Date().toISOString();
 
@@ -541,7 +550,7 @@ export const getDashboardData = () => {
 
         t.items.forEach(item => {
             const productName = item.productName;
-            const itemProfit = item.lineTotal - item.lineCost - item.lineTax;
+            const itemProfit = item.lineTotal - item.lineCost;
             
             acc.salesByProduct[productName] = (acc.salesByProduct[productName] || 0) + item.lineTotal;
             acc.profitByProduct[productName] = (acc.profitByProduct[productName] || 0) + itemProfit;
@@ -657,5 +666,3 @@ export const endDayProcess = (): DailyReport => {
     // Step 5 & 6 are handled by the caller (webhook + state reset)
     return report;
 };
-
-    
