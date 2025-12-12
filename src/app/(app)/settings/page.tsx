@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -46,7 +45,18 @@ const settingsSchema = z.object({
   currency: z.string(),
   idleTimeout: z.coerce.number().min(0),
   vatRate: z.coerce.number().min(0).max(100, "VAT rate cannot exceed 100%."),
-  masterPassword: z.string().optional(),
+  masterPassword: z.string().optional().refine(password => 
+    !password || // Allow empty string (to keep current password)
+    (
+        password.length >= 12 &&
+        /[A-Z]/.test(password) &&
+        /[a-z]/.test(password) &&
+        /\d/.test(password) &&
+        /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) &&
+        password !== "DARKSULPHUR"
+    ), {
+    message: "Password does not meet the requirements. Please check the criteria below."
+  }),
   lockedTabs: z.array(z.string()).optional(),
 });
 
@@ -305,14 +315,15 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Security</CardTitle>
+            <CardTitle>Security Settings</CardTitle>
             <CardDescription>
-              Manage master password and tab access controls.
+              Configure authentication and session management.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
               <div className="relative space-y-2">
                 <Label htmlFor="masterPassword">Master Password</Label>
+                 <p className="text-xs text-muted-foreground">Set a new master password. Used for critical actions such as editing inventory or unlocking restricted tabs.</p>
                 <Input 
                   id="masterPassword" 
                   type={showPassword ? "text" : "password"} 
@@ -324,18 +335,28 @@ export default function SettingsPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                  className="absolute right-1 top-12 h-7 w-7 text-muted-foreground"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                 </Button>
-                <p className="text-xs text-muted-foreground">Used for critical actions like editing inventory or unlocking tabs. Leave blank to keep the current password.</p>
+                {errors.masterPassword ? (
+                    <p className="text-sm text-destructive">{errors.masterPassword.message}</p>
+                ) : (
+                    <ul className="text-xs text-muted-foreground list-disc pl-5 space-y-1 mt-2">
+                        <li>Minimum 12 characters</li>
+                        <li>Include uppercase, lowercase, numbers, and symbols</li>
+                        <li>Cannot be a common or default password</li>
+                    </ul>
+                )}
+                 <p className="text-xs text-muted-foreground pt-2">Password reset: Contact administrator if forgotten. (Default password is disabled in production.)</p>
               </div>
+
               <div className="space-y-2">
-                  <Label htmlFor="idleTimeout">Idle Timeout (seconds)</Label>
+                  <Label htmlFor="idleTimeout">Session Timeout (seconds)</Label>
                   <Input id="idleTimeout" type="number" {...register("idleTimeout")} placeholder="e.g., 300 for 5 minutes" />
-                  <p className="text-xs text-muted-foreground">Automatically log out after a period of inactivity. Set to 0 to disable.</p>
+                  <p className="text-xs text-muted-foreground">Automatically log out after inactivity. Set to 0 to disable. Recommended: 300-600 seconds.</p>
                   {errors.idleTimeout && <p className="text-sm text-destructive">{errors.idleTimeout.message}</p>}
               </div>
 
@@ -386,7 +407,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end mt-6">
             <Button type="submit">Save All Settings</Button>
         </div>
       </form>
@@ -482,5 +503,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
