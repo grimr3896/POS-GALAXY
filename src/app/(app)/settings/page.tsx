@@ -35,28 +35,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { saveProductsFromCSV, getSettings, saveSettings } from "@/lib/api";
 import type { AppSettings } from "@/lib/types";
-import { Download, Upload, FileUp, LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet, Eye, EyeOff, AlertCircle, ServerCrash } from "lucide-react";
+import { Download, Upload, FileUp, LayoutDashboard, ShoppingCart, Archive, Users, Settings, History, FileText, Landmark, Wallet, Eye, EyeOff, AlertCircle, ServerCrash, KeyRound } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
+import { ChangePasswordDialog } from './change-password-dialog';
 
 const settingsSchema = z.object({
   appName: z.string().min(1, "App name is required."),
   currency: z.string(),
   idleTimeout: z.coerce.number().min(0),
   vatRate: z.coerce.number().min(0).max(100, "VAT rate cannot exceed 100%."),
-  masterPassword: z.string().optional().refine(password => 
-    !password || // Allow empty string (to keep current password)
-    (
-        password.length >= 12 &&
-        /[A-Z]/.test(password) &&
-        /[a-z]/.test(password) &&
-        /\d/.test(password) &&
-        /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) &&
-        password !== "DARKSULPHUR"
-    ), {
-    message: "Password does not meet the requirements. Please check the criteria below."
-  }),
   lockedTabs: z.array(z.string()).optional(),
 });
 
@@ -76,12 +64,11 @@ const allTabs = [
 
 const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses", "settings", "pos_initialized_v4", "reports"];
 
-const defaultFormValues: SettingsFormValues = {
+const defaultFormValues: Omit<SettingsFormValues, "masterPassword"> = {
     appName: "Galaxy Inn",
     currency: "KSH",
     idleTimeout: 0,
     vatRate: 16,
-    masterPassword: "",
     lockedTabs: [],
 };
 
@@ -90,8 +77,8 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const restoreInputRef = React.useRef<HTMLInputElement>(null);
   const csvInputRef = React.useRef<HTMLInputElement>(null);
-  const [showPassword, setShowPassword] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   
   const {
     register,
@@ -108,11 +95,11 @@ export default function SettingsPage() {
   
   useEffect(() => {
     setIsClient(true);
-    // Move reset into a timeout to prevent flushSync errors during hydration
     setTimeout(() => {
         const storedSettings = getSettings();
         if (storedSettings) {
-            reset(storedSettings);
+            const { masterPassword, ...otherSettings } = storedSettings;
+            reset(otherSettings);
         }
     }, 0);
   }, [reset]);
@@ -135,9 +122,8 @@ export default function SettingsPage() {
     } else {
       newLockedTabs = currentLockedTabs.filter(id => id !== tabId);
     }
-    // Defer the update to prevent flushSync error
     setTimeout(() => {
-      setValue("lockedTabs", newLockedTabs, { shouldDirty: true });
+        setValue("lockedTabs", newLockedTabs, { shouldDirty: true });
     }, 0);
   };
 
@@ -269,6 +255,7 @@ export default function SettingsPage() {
   }
 
   return (
+    <>
     <div className="space-y-6">
       <form onSubmit={handleSubmit(onSubmit)}>
         <Card>
@@ -321,36 +308,13 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-              <div className="relative space-y-2">
-                <Label htmlFor="masterPassword">Master Password</Label>
-                 <p className="text-xs text-muted-foreground">Set a new master password. Used for critical actions such as editing inventory or unlocking restricted tabs.</p>
-                <Input 
-                  id="masterPassword" 
-                  type={showPassword ? "text" : "password"} 
-                  {...register("masterPassword")} 
-                  placeholder="Enter new password to change"
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-12 h-7 w-7 text-muted-foreground"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+              <div className="space-y-2">
+                <Label>Master Password</Label>
+                <p className="text-sm text-muted-foreground">The master password is used for critical actions. It is stored securely and can be changed here.</p>
+                <Button type="button" variant="outline" onClick={() => setIsPasswordModalOpen(true)}>
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    Change Master Password
                 </Button>
-                {errors.masterPassword ? (
-                    <p className="text-sm text-destructive">{errors.masterPassword.message}</p>
-                ) : (
-                    <ul className="text-xs text-muted-foreground list-disc pl-5 space-y-1 mt-2">
-                        <li>Minimum 12 characters</li>
-                        <li>Include uppercase, lowercase, numbers, and symbols</li>
-                        <li>Cannot be a common or default password</li>
-                    </ul>
-                )}
-                 <p className="text-xs text-muted-foreground pt-2">Password reset: Contact administrator if forgotten. (Default password is disabled in production.)</p>
               </div>
 
               <div className="space-y-2">
@@ -501,5 +465,10 @@ export default function SettingsPage() {
       </Card>
 
     </div>
+     <ChangePasswordDialog
+        isOpen={isPasswordModalOpen}
+        onOpenChange={setIsPasswordModalOpen}
+    />
+    </>
   );
 }

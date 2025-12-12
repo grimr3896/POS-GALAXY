@@ -107,15 +107,34 @@ initStorage();
 
 // Settings
 export const getSettings = (): AppSettings => getFromStorage("settings", defaultSettings);
-export const saveSettings = (settings: AppSettings) => {
+export const saveSettings = (settings: Omit<AppSettings, "masterPassword">) => {
     const currentSettings = getSettings();
-    // Prevent masterPassword from being saved as an empty string
     const newSettings = {
+        ...currentSettings,
         ...settings,
-        masterPassword: settings.masterPassword ? settings.masterPassword : currentSettings.masterPassword,
     };
     saveToStorage("settings", newSettings);
 };
+export const changeMasterPassword = (currentPassword: string, newPassword: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        const settings = getSettings();
+        if (settings.masterPassword !== currentPassword) {
+            reject(new Error("Current password is incorrect."));
+            return;
+        }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
+        if (!passwordRegex.test(newPassword) || newPassword === 'DARKSULPHUR') {
+            reject(new Error("New password does not meet the security requirements."));
+            return;
+        }
+
+        const newSettings = { ...settings, masterPassword: newPassword };
+        saveToStorage("settings", newSettings);
+        resolve();
+    });
+};
+
 
 // Users
 export const getUsers = (): User[] => getFromStorage("users", []);
@@ -665,5 +684,3 @@ export const endDayProcess = (): DailyReport => {
     // Step 5 & 6 are handled by the caller (webhook + state reset)
     return report;
 };
-
-    
