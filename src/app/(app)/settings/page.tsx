@@ -348,20 +348,16 @@ export default function SettingsPage() {
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
-                                {tab.id === '/settings' ? (
-                                    <span className="text-xs text-muted-foreground italic">Always Unlocked</span>
-                                ) : (
-                                    <Controller
-                                      name="lockedTabs"
-                                      control={control}
-                                      render={({ field }) => (
-                                        <Switch
-                                          checked={field.value?.includes(tab.id)}
-                                          onCheckedChange={(checked) => handleTabLockChange(tab.id, checked)}
-                                        />
-                                      )}
+                                <Controller
+                                  name="lockedTabs"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Switch
+                                      checked={field.value?.includes(tab.id)}
+                                      onCheckedChange={(checked) => handleTabLockChange(tab.id, checked)}
                                     />
-                                )}
+                                  )}
+                                />
                               </TableCell>
                           </TableRow>
                         ))}
