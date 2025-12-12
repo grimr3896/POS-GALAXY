@@ -44,7 +44,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
 
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [unlockedTabs, setUnlockedTabs] = useState<string[]>([]);
   const [passwordPrompt, setPasswordPrompt] = useState<{ isOpen: boolean, targetHref: string | null }>({ isOpen: false, targetHref: null });
   const [isClient, setIsClient] = useState(false);
 
@@ -55,12 +54,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setSettings(getSettings());
     };
     
-    setSettings(getSettings());
-
-    const sessionUnlocked = sessionStorage.getItem("unlockedTabs");
-    if (sessionUnlocked) {
-      setUnlockedTabs(JSON.parse(sessionUnlocked));
-    }
+    // Initial load
+    handleSettingsUpdate();
     
     window.addEventListener('settings-updated', handleSettingsUpdate);
     
@@ -78,25 +73,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (!settings) return;
       
       const isLocked = settings.lockedTabs?.includes(href);
-      const isSessionUnlocked = unlockedTabs.includes(href);
 
-      if (isLocked && !isSessionUnlocked) {
+      if (isLocked) {
           e.preventDefault();
           setPasswordPrompt({ isOpen: true, targetHref: href });
       }
   };
 
   const handlePasswordConfirm = (password: string) => {
-    if (!settings) return;
-    const masterPassword = settings.masterPassword || "DARKSULPHUR";
+    const currentSettings = getSettings();
+    const masterPassword = currentSettings.masterPassword || "DARKSULPHUR";
     const targetHref = passwordPrompt.targetHref;
 
     if (password === masterPassword && targetHref) {
-      const newUnlockedTabs = [...unlockedTabs, targetHref];
-      setUnlockedTabs(newUnlockedTabs);
-      sessionStorage.setItem("unlockedTabs", JSON.stringify(newUnlockedTabs));
-      
-      toast({ title: "Tab Unlocked", description: `You can now access this tab for the rest of your session.` });
       router.push(targetHref);
     } else {
       toast({
@@ -127,7 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             {navItems.map((item) => {
-              const isLocked = settings.lockedTabs?.includes(item.href) && !unlockedTabs.includes(item.href);
+              const isLocked = settings.lockedTabs?.includes(item.href);
               return (
                 <SidebarMenuItem key={item.href}>
                   <Link href={item.href} onClick={(e) => handleNavClick(e, item.href)} passHref>
@@ -170,5 +159,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    
