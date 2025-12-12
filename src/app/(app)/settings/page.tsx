@@ -62,13 +62,21 @@ const allTabs = [
 
 const DATA_KEYS = ["users", "products", "inventory", "transactions", "suspended_orders", "expenses", "settings"];
 
+const defaultFormValues: SettingsFormValues = {
+    appName: "Galaxy Inn",
+    currency: "KSH",
+    idleTimeout: 0,
+    vatRate: 16,
+    masterPassword: "",
+    lockedTabs: [],
+};
+
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const restoreInputRef = React.useRef<HTMLInputElement>(null);
   const csvInputRef = React.useRef<HTMLInputElement>(null);
-  const [initialSettings, setInitialSettings] = useState<SettingsFormValues>(getSettings());
-
-
+  
   const {
     register,
     handleSubmit,
@@ -79,16 +87,19 @@ export default function SettingsPage() {
     formState: { errors },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: initialSettings,
+    defaultValues: defaultFormValues,
   });
   
   useEffect(() => {
-    reset(initialSettings);
-  }, [initialSettings, reset]);
+    // Fetch settings from localStorage only on the client-side after mount
+    // to prevent hydration mismatch errors.
+    const storedSettings = getSettings();
+    reset(storedSettings);
+  }, [reset]);
 
   const onSubmit = (data: SettingsFormValues) => {
     saveSettings(data);
-    setInitialSettings(data); // update state to reflect saved changes
+    reset(data); // update form state to reflect saved changes
     toast({
       title: "Settings Saved",
       description: "Your new settings have been applied. Some changes may require a page reload.",
@@ -372,3 +383,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
