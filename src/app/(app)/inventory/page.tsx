@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -49,7 +50,7 @@ export default function InventoryPage() {
 
   const handlePasswordConfirm = (password: string) => {
     const settings = getSettings();
-    const masterPassword = settings.masterPassword || "626-jarvis";
+    const masterPassword = settings.masterPassword || "DARKSULPHUR";
     
     if (password === masterPassword) {
       if (actionPending?.type === "edit") {
@@ -124,3 +125,5 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    

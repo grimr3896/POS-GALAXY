@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { getTransactions, getUsers, reverseTransaction } from "@/lib/api";
+import { getTransactions, getUsers, reverseTransaction, getSettings } from "@/lib/api";
 import type { Transaction, User, OrderItem } from "@/lib/types";
 import { SalesHistoryTable } from "./sales-history-table";
 import { SalesHistoryFilters, type DateRange } from "./sales-history-filters";
@@ -94,7 +95,9 @@ export default function SalesHistoryPage() {
   const handlePasswordConfirm = (password: string) => {
      if (!transactionToReverse) return;
      
-    if (password === "626-jarvis") {
+     const settings = getSettings();
+     const masterPassword = settings.masterPassword || "DARKSULPHUR";
+    if (password === masterPassword) {
         try {
             const newOrderItems: OrderItem[] = reverseTransaction(transactionToReverse.id);
             setPendingOrder(newOrderItems);
@@ -168,3 +171,5 @@ export default function SalesHistoryPage() {
     </div>
   );
 }
+
+    

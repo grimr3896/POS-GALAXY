@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -54,7 +55,7 @@ export default function ExpensesPage() {
   
   const handlePasswordConfirm = (password: string) => {
     const settings = getSettings();
-    const masterPassword = settings.masterPassword || "626-jarvis";
+    const masterPassword = settings.masterPassword || "DARKSULPHUR";
     
     if (password !== masterPassword) {
       toast({
@@ -132,3 +133,5 @@ export default function ExpensesPage() {
     </div>
   );
 }
+
+    

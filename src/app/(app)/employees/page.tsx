@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -45,7 +46,7 @@ export default function EmployeesPage() {
 
   const handlePasswordConfirm = (password: string) => {
     const settings = getSettings();
-    const masterPassword = settings.masterPassword || "626-jarvis";
+    const masterPassword = settings.masterPassword || "DARKSULPHUR";
     
     if (password === masterPassword) { 
         if(employeeIdToDelete !== null) {
@@ -116,3 +117,5 @@ export default function EmployeesPage() {
     </div>
   );
 }
+
+    

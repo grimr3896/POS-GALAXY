@@ -83,7 +83,7 @@ const defaultSettings: AppSettings = {
     currency: "KSH",
     idleTimeout: 0, // Disabled by default
     vatRate: 16,
-    masterPassword: "626-jarvis",
+    masterPassword: "DARKSULPHUR",
     lockedTabs: [],
 };
 
@@ -666,3 +666,5 @@ export const endDayProcess = (): DailyReport => {
     // Step 5 & 6 are handled by the caller (webhook + state reset)
     return report;
 };
+
+    

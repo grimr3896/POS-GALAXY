@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
@@ -83,7 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   const handlePasswordConfirm = (password: string) => {
-    const masterPassword = settings.masterPassword || "626-jarvis";
+    const masterPassword = settings.masterPassword || "DARKSULPHUR";
     const targetHref = passwordPrompt.targetHref;
 
     if (password === masterPassword && targetHref) {
@@ -161,3 +162,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
